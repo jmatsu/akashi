@@ -1,0 +1,108 @@
+# Build, lint, test and format, then publish the result to GitHub Pages.
+#
+# The jobs are split by toolchain rather than by check, so nothing is installed
+# twice: `web` needs only Node, `crate` only Rust, and `build` -- the one job
+# that needs both, because the TypeScript imports the generated wasm bindings --
+# typechecks, runs the web tests and produces the bundle.
+#
+# Anything that does not compile Rust runs on `ubuntu-slim`; the crate needs a
+# host linker for the proc-macro half of wasm-bindgen, so those jobs take the
+# full image.
+#
+# Actions are pinned to a commit, since a tag can be moved to point at something
+# else; the trailing comment is the release that commit was, and is what tells
+# you -- or Dependabot -- what a bump would be moving away from.
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+# A superseded pull request run is worth cancelling; a deploy in flight is not.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+permissions:
+  contents: read
+
+env:
+  # The tests import `.ts` files directly, which needs Node's type stripping.
+  NODE_VERSION: '24'
+
+jobs:
+  # Lint and format for everything Biome owns: TypeScript, CSS, JSON.
+  web:
+    name: Lint & format (web)
+    runs-on: ubuntu-slim
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+      - run: npm ci
+      # `biome ci` is `lint` and `format --check` in a single pass.
+      - run: npx biome ci .
+
+  # Format, lint and test for the Rust core.
+  crate:
+    name: Lint, format & test (crate)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - run: rustup component add rustfmt clippy
+      - uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2.9.2
+        with:
+          workspaces: crate
+      - run: npm run format:check:core
+      - run: npm run lint:core
+      - run: npm run test:core
+
+  # Typecheck, web tests and the production bundle. All three need the wasm
+  # bindings, so they share the one job that can build them.
+  build:
+    name: Typecheck, test & build
+    runs-on: ubuntu-latest
+    env:
+      # A project site is served under the repository name; `vite.config.ts`
+      # takes that as `base`. A custom domain at the origin root would be `/`.
+      AKA_BASE: /${{ github.event.repository.name }}/
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - run: rustup target add wasm32-unknown-unknown
+      - uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2.9.2
+        with:
+          workspaces: crate
+      - uses: taiki-e/install-action@37f7c5781271959fb65b6b35224e28652ff2b63d # v2.87.0
+        with:
+          tool: wasm-pack
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+      - run: npm ci
+      # wasm-pack, then `tsc --noEmit`, then the bundle.
+      - run: npm run build
+      # The web tests import the bindings the build just generated.
+      - run: npm run test:web
+      # Uploaded on pull requests too, so a broken bundle shows up before merge.
+      - uses: actions/upload-pages-artifact@fc324d3547104276b827a68afc52ff2a11cc49c9 # v5.0.0
+        with:
+          path: dist
+
+  deploy:
+    name: Deploy to Pages
+    needs: [web, crate, build]
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-slim
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@cd2ce8fcbc39b97be8ca5fce6e763baed58fa128 # v5.0.0

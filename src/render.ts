@@ -113,7 +113,13 @@ function drawArrow(ctx: CanvasRenderingContext2D, o: ArrowObj): void {
 
 const HEAD_SPREAD = Math.PI / 7
 
-function drawOpenHead(ctx: CanvasRenderingContext2D, x: number, y: number, angle: number, head: number): void {
+function drawOpenHead(
+  ctx: CanvasRenderingContext2D,
+  x: number,
+  y: number,
+  angle: number,
+  head: number,
+): void {
   ctx.beginPath()
   ctx.moveTo(x - Math.cos(angle - HEAD_SPREAD) * head, y - Math.sin(angle - HEAD_SPREAD) * head)
   ctx.lineTo(x, y)
@@ -121,7 +127,13 @@ function drawOpenHead(ctx: CanvasRenderingContext2D, x: number, y: number, angle
   ctx.stroke()
 }
 
-function drawSolidHead(ctx: CanvasRenderingContext2D, x: number, y: number, angle: number, head: number): void {
+function drawSolidHead(
+  ctx: CanvasRenderingContext2D,
+  x: number,
+  y: number,
+  angle: number,
+  head: number,
+): void {
   ctx.beginPath()
   ctx.moveTo(x, y)
   ctx.lineTo(x - Math.cos(angle - HEAD_SPREAD) * head, y - Math.sin(angle - HEAD_SPREAD) * head)
@@ -200,7 +212,11 @@ export interface SelectionChrome {
   handles: Handle[]
 }
 
-export function selectionChrome(o: Obj, measure: Measure, toScreen: (x: number, y: number) => Pt): SelectionChrome {
+export function selectionChrome(
+  o: Obj,
+  measure: Measure,
+  toScreen: (x: number, y: number) => Pt,
+): SelectionChrome {
   const b = bounds(o, measure)
   const tl = toScreen(b.x, b.y)
   const br = toScreen(b.x + b.w, b.y + b.h)

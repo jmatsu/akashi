@@ -1,4 +1,13 @@
-import { bounds, hitTest, isDegenerate, onRectBorder, resize, textFont, translate, TEXT_LINE_HEIGHT } from './geom'
+import {
+  bounds,
+  hitTest,
+  isDegenerate,
+  onRectBorder,
+  resize,
+  textFont,
+  translate,
+  TEXT_LINE_HEIGHT,
+} from './geom'
 import type { Handle, HandleId, Measure } from './geom'
 import { drawSelection, HANDLE_SIZE, renderScene, selectionChrome } from './render'
 import { BLANK_DOC, DEFAULT_SETTINGS, STYLE_FIELDS } from './types'
@@ -89,7 +98,9 @@ export class Editor {
 
   constructor(private readonly opts: EditorOptions) {
     // Region effects call `getImageData` on every frame of a drag.
+    // biome-ignore lint/style/noNonNullAssertion: a 2d context is only null when the canvas already holds another one, and these two are ours.
     this.sceneCtx = this.scene.getContext('2d', { willReadFrequently: true })!
+    // biome-ignore lint/style/noNonNullAssertion: same -- the app owns this canvas.
     this.viewCtx = opts.canvas.getContext('2d')!
     this.checker = makeChecker(this.viewCtx)
 
@@ -118,7 +129,11 @@ export class Editor {
   // --- document ----------------------------------------------------------
 
   /** Replace the document with a blank canvas. */
-  newDoc(width = BLANK_DOC.width, height = BLANK_DOC.height, background: string | null = BLANK_DOC.background): void {
+  newDoc(
+    width = BLANK_DOC.width,
+    height = BLANK_DOC.height,
+    background: string | null = BLANK_DOC.background,
+  ): void {
     this.image = null
     this.imageSource = null
     this.doc = { width, height, background, name: null, objects: [] }
@@ -371,9 +386,13 @@ export class Editor {
     return { x: (p.x - this.tx) / this.scale, y: (p.y - this.ty) / this.scale }
   }
 
-  private toScreen = (x: number, y: number): Pt => ({ x: x * this.scale + this.tx, y: y * this.scale + this.ty })
+  private toScreen = (x: number, y: number): Pt => ({
+    x: x * this.scale + this.tx,
+    y: y * this.scale + this.ty,
+  })
 
   private eventPoint(e: PointerEvent | WheelEvent): Pt {
+    // biome-ignore lint/suspicious/noAssignInExpressions: the point is to fill the cache and read it in one go; it is invalidated on resize.
     const r = (this.canvasRect ??= this.opts.canvas.getBoundingClientRect())
     return { x: e.clientX - r.left, y: e.clientY - r.top }
   }
@@ -448,7 +467,8 @@ export class Editor {
     ctx.restore()
 
     const sel = this.selected()
-    if (sel && this.editingId !== sel.id) drawSelection(ctx, selectionChrome(sel, this.measure, this.toScreen))
+    if (sel && this.editingId !== sel.id)
+      drawSelection(ctx, selectionChrome(sel, this.measure, this.toScreen))
     if (this.editingId) this.positionTextarea()
   }
 
@@ -461,7 +481,10 @@ export class Editor {
     // is the only case where the scene now needs rebuilding.
     if (this.editingId !== null) this.sceneDirty = true
     return new Promise((resolve, reject) => {
-      this.scene.toBlob((blob) => (blob ? resolve(blob) : reject(new Error('aka: PNG encoding failed'))), 'image/png')
+      this.scene.toBlob(
+        (blob) => (blob ? resolve(blob) : reject(new Error('aka: PNG encoding failed'))),
+        'image/png',
+      )
     })
   }
 
@@ -700,7 +723,8 @@ export class Editor {
     // there will actually do.
     const chrome = screen ? this.chromeAt(screen) : null
     if (chrome) this.opts.canvas.style.cursor = chrome.handle?.cursor ?? 'move'
-    else if (this.tool !== 'select') this.opts.canvas.style.cursor = this.tool === 'text' ? 'text' : 'crosshair'
+    else if (this.tool !== 'select')
+      this.opts.canvas.style.cursor = this.tool === 'text' ? 'text' : 'crosshair'
     else this.opts.canvas.style.cursor = screen && this.topmostAt(this.toDoc(screen)) ? 'move' : 'default'
   }
 
@@ -730,15 +754,49 @@ export class Editor {
     const id = newId()
     switch (this.tool) {
       case 'text':
-        return { id, type: 'text', x: doc.x, y: doc.y - s.fontSize / 2, text: '', size: s.fontSize, color: s.color }
+        return {
+          id,
+          type: 'text',
+          x: doc.x,
+          y: doc.y - s.fontSize / 2,
+          text: '',
+          size: s.fontSize,
+          color: s.color,
+        }
       case 'emoji':
-        return { id, type: 'emoji', x: doc.x - s.emojiSize / 2, y: doc.y - s.emojiSize / 2, size: s.emojiSize, char: s.emoji }
+        return {
+          id,
+          type: 'emoji',
+          x: doc.x - s.emojiSize / 2,
+          y: doc.y - s.emojiSize / 2,
+          size: s.emojiSize,
+          char: s.emoji,
+        }
       case 'marker':
         return { id, type: 'marker', points: [doc], color: s.color, width: s.markerWidth }
       case 'arrow':
-        return { id, type: 'arrow', x1: doc.x, y1: doc.y, x2: doc.x, y2: doc.y, color: s.color, width: s.arrowWidth, style: s.arrowStyle }
+        return {
+          id,
+          type: 'arrow',
+          x1: doc.x,
+          y1: doc.y,
+          x2: doc.x,
+          y2: doc.y,
+          color: s.color,
+          width: s.arrowWidth,
+          style: s.arrowStyle,
+        }
       case 'region':
-        return { id, type: 'region', x: doc.x, y: doc.y, w: 0, h: 0, mode: s.regionMode, strength: s.regionStrength[s.regionMode] }
+        return {
+          id,
+          type: 'region',
+          x: doc.x,
+          y: doc.y,
+          w: 0,
+          h: 0,
+          mode: s.regionMode,
+          strength: s.regionStrength[s.regionMode],
+        }
       case 'rect':
       case 'circle':
       case 'ellipse':

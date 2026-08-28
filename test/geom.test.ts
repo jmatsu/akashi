@@ -1,6 +1,15 @@
 import { strict as assert } from 'node:assert'
 import { test } from 'node:test'
-import { bounds, handlesOf, hitTest, isDegenerate, normalize, onRectBorder, resize, translate } from '../src/geom.ts'
+import {
+  bounds,
+  handlesOf,
+  hitTest,
+  isDegenerate,
+  normalize,
+  onRectBorder,
+  resize,
+  translate,
+} from '../src/geom.ts'
 import type { Measure } from '../src/geom.ts'
 import type { ArrowObj, EmojiObj, MarkerObj, RegionObj, ShapeObj, TextObj } from '../src/types.ts'
 
@@ -44,7 +53,16 @@ test('a filled rect is grabbed anywhere inside', () => {
 })
 
 test('a region is grabbed anywhere inside, filled or not', () => {
-  const region: RegionObj = { id: 'g', type: 'region', x: 0, y: 0, w: 50, h: 50, mode: 'mosaic', strength: 12 }
+  const region: RegionObj = {
+    id: 'g',
+    type: 'region',
+    x: 0,
+    y: 0,
+    w: 50,
+    h: 50,
+    mode: 'mosaic',
+    strength: 12,
+  }
   assert.equal(hitTest(region, { x: 25, y: 25 }, measure), true)
 })
 
@@ -55,7 +73,17 @@ test('an ellipse hit follows its curve, not its bounding box', () => {
 })
 
 test('an arrow is grabbed near its shaft', () => {
-  const a: ArrowObj = { id: 'a', type: 'arrow', x1: 0, y1: 0, x2: 100, y2: 100, color: '#000', width: 4, style: 'solid' }
+  const a: ArrowObj = {
+    id: 'a',
+    type: 'arrow',
+    x1: 0,
+    y1: 0,
+    x2: 100,
+    y2: 100,
+    color: '#000',
+    width: 4,
+    style: 'solid',
+  }
   assert.equal(hitTest(a, { x: 50, y: 52 }, measure), true)
   assert.equal(hitTest(a, { x: 50, y: 90 }, measure), false)
 })
@@ -72,7 +100,17 @@ test('text bounds use the measured width and the line count', () => {
 })
 
 test('translate moves every geometry kind, recomputed from the drag start', () => {
-  const before: ArrowObj = { id: 'a', type: 'arrow', x1: 0, y1: 0, x2: 10, y2: 10, color: '#000', width: 2, style: 'line' }
+  const before: ArrowObj = {
+    id: 'a',
+    type: 'arrow',
+    x1: 0,
+    y1: 0,
+    x2: 10,
+    y2: 10,
+    color: '#000',
+    width: 2,
+    style: 'line',
+  }
   const a: ArrowObj = { ...before }
   translate(a, before, 5, -5)
   assert.deepEqual([a.x1, a.y1, a.x2, a.y2], [5, -5, 15, 5])
@@ -114,7 +152,17 @@ test('shift squares off a shape and snaps an arrow to 45 degrees', () => {
   resize(o, start, 'se', { x: 100, y: 20 }, true)
   assert.deepEqual([o.w, o.h], [100, 100])
 
-  const aStart: ArrowObj = { id: 'a', type: 'arrow', x1: 0, y1: 0, x2: 0, y2: 0, color: '#000', width: 2, style: 'line' }
+  const aStart: ArrowObj = {
+    id: 'a',
+    type: 'arrow',
+    x1: 0,
+    y1: 0,
+    x2: 0,
+    y2: 0,
+    color: '#000',
+    width: 2,
+    style: 'line',
+  }
   const a: ArrowObj = { ...aStart }
   resize(a, aStart, 'p2', { x: 100, y: 10 }, true)
   assert.equal(Math.round(a.y2), 0)
@@ -137,7 +185,17 @@ test('a resize never collapses a shape to nothing', () => {
 test('a click that never became a drag is degenerate', () => {
   assert.equal(isDegenerate({ ...rect, w: 0, h: 0 }), true)
   assert.equal(isDegenerate(rect), false)
-  const arrow: ArrowObj = { id: 'a', type: 'arrow', x1: 5, y1: 5, x2: 5, y2: 5, color: '#000', width: 2, style: 'line' }
+  const arrow: ArrowObj = {
+    id: 'a',
+    type: 'arrow',
+    x1: 5,
+    y1: 5,
+    x2: 5,
+    y2: 5,
+    color: '#000',
+    width: 2,
+    style: 'line',
+  }
   assert.equal(isDegenerate(arrow), true)
   assert.equal(isDegenerate({ ...arrow, x2: 60 }), false)
   // A tap with the marker leaves a deliberate dot, not a stray object.
@@ -147,7 +205,17 @@ test('a click that never became a drag is degenerate', () => {
 
 test('each type exposes the handles it can actually be dragged by', () => {
   const emoji: EmojiObj = { id: 'e', type: 'emoji', x: 0, y: 0, size: 10, char: '👍' }
-  const arrow: ArrowObj = { id: 'a', type: 'arrow', x1: 0, y1: 0, x2: 1, y2: 1, color: '#000', width: 1, style: 'line' }
+  const arrow: ArrowObj = {
+    id: 'a',
+    type: 'arrow',
+    x1: 0,
+    y1: 0,
+    x2: 1,
+    y2: 1,
+    color: '#000',
+    width: 1,
+    style: 'line',
+  }
   const text: TextObj = { id: 't', type: 'text', x: 0, y: 0, text: 'x', size: 10, color: '#000' }
   const handles = (o: Parameters<typeof bounds>[0]): number => handlesOf(o, bounds(o, measure)).length
   assert.equal(handles(rect), 8)

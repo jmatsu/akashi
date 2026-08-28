@@ -217,7 +217,16 @@ type Fields<T extends Obj> = { readonly [F in Exclude<keyof T, 'id' | 'type'>]: 
 const OBJ_FIELDS: { readonly [K in ObjType]: Fields<ObjOf<K>> } = {
   text: { x: num, y: num, text: str, size: num, color: str },
   rect: { x: num, y: num, w: num, h: num, stroke: str, strokeWidth: num, fill: strOrNull, lockAspect: bool },
-  ellipse: { x: num, y: num, w: num, h: num, stroke: str, strokeWidth: num, fill: strOrNull, lockAspect: bool },
+  ellipse: {
+    x: num,
+    y: num,
+    w: num,
+    h: num,
+    stroke: str,
+    strokeWidth: num,
+    fill: strOrNull,
+    lockAspect: bool,
+  },
   arrow: { x1: num, y1: num, x2: num, y2: num, color: str, width: num, style: oneOf(ARROW_STYLES) },
   marker: { points, color: str, width: num },
   emoji: { x: num, y: num, size: num, char: str },

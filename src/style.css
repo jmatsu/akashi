@@ -27,6 +27,7 @@ body {
   overscroll-behavior: none;
   background: var(--bg);
   color: var(--text);
+  /* biome-ignore format: the shorthand is one value; splitting it hides that. */
   font: 13px/1.4 system-ui, -apple-system, "Hiragino Sans", "Noto Sans JP", sans-serif;
   -webkit-text-size-adjust: 100%;
 }
@@ -41,6 +42,7 @@ button {
 #app {
   display: grid;
   height: 100vh;
+  /* biome-ignore lint/suspicious/noDuplicateProperties: the vh above is the fallback for browsers without dvh. */
   height: 100dvh;
   /* Phones: canvas up top, controls under the thumb. */
   grid-template-areas: "head" "stage" "options" "tools";
@@ -455,6 +457,7 @@ button.emoji.on {
   border: 1px solid var(--line);
   opacity: 0;
   pointer-events: none;
+  /* biome-ignore format: two short transitions read better on one line. */
   transition: opacity 0.18s, transform 0.18s;
   z-index: 10;
 }
