@@ -1,0 +1,435 @@
+/* The two brand colours below are the one place they are written outside
+   src/brand.ts: a stylesheet cannot import. Keep them in step with INK and
+   ACCENT there. */
+:root {
+  --bg: #1b1d21;
+  --panel: #24272d;
+  --panel-hi: #2f333b;
+  --line: #3a3f48;
+  --text: #e7e9ee;
+  --muted: #98a0ac;
+  --accent: #e2483d;
+  --accent-ink: #ffffff;
+  --stage: #101216;
+  --radius: 8px;
+  --tap: 40px;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  height: 100%;
+  overflow: hidden;
+  overscroll-behavior: none;
+  background: var(--bg);
+  color: var(--text);
+  font: 13px/1.4 system-ui, -apple-system, "Hiragino Sans", "Noto Sans JP", sans-serif;
+  -webkit-text-size-adjust: 100%;
+}
+
+button {
+  font: inherit;
+  color: inherit;
+}
+
+/* --- layout ------------------------------------------------------------ */
+
+#app {
+  display: grid;
+  height: 100vh;
+  height: 100dvh;
+  /* Phones: canvas up top, controls under the thumb. */
+  grid-template-areas: "head" "stage" "options" "tools";
+  grid-template-rows: auto 1fr auto auto;
+  padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom)
+    env(safe-area-inset-left);
+}
+
+@media (min-width: 900px) {
+  #app {
+    /* Desktop: a tool rail on the left, options above the canvas. */
+    grid-template-areas: "head head" "tools options" "tools stage";
+    grid-template-columns: auto 1fr;
+    grid-template-rows: auto auto 1fr;
+  }
+}
+
+#topbar {
+  grid-area: head;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 6px 10px;
+  background: var(--panel);
+  border-bottom: 1px solid var(--line);
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+#topbar::-webkit-scrollbar {
+  display: none;
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-weight: 700;
+  font-size: 15px;
+  letter-spacing: 0.06em;
+  flex: none;
+}
+
+.brand .dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--accent);
+}
+
+.actions {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex: none;
+}
+
+.actions button {
+  min-height: 32px;
+  padding: 0 10px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--panel-hi);
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.actions button:hover:not(:disabled) {
+  border-color: var(--muted);
+}
+
+.actions button:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+.actions button.primary {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--accent-ink);
+  font-weight: 600;
+}
+
+.sep {
+  width: 1px;
+  height: 20px;
+  background: var(--line);
+  margin: 0 4px;
+}
+
+#zoom-label {
+  min-width: 48px;
+  text-align: center;
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+
+/* --- tools -------------------------------------------------------------- */
+
+#tools {
+  grid-area: tools;
+  display: flex;
+  gap: 4px;
+  padding: 6px;
+  background: var(--panel);
+  border-top: 1px solid var(--line);
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+#tools::-webkit-scrollbar {
+  display: none;
+}
+
+@media (min-width: 900px) {
+  #tools {
+    flex-direction: column;
+    border-top: 0;
+    border-right: 1px solid var(--line);
+    overflow: visible;
+  }
+}
+
+.tool {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  min-width: 58px;
+  min-height: var(--tap);
+  padding: 6px 4px;
+  border: 1px solid transparent;
+  border-radius: var(--radius);
+  background: transparent;
+  cursor: pointer;
+  flex: none;
+}
+
+.tool:hover {
+  background: var(--panel-hi);
+}
+
+.tool.on {
+  background: var(--accent);
+  color: var(--accent-ink);
+}
+
+.tool-label {
+  font-size: 10px;
+  white-space: nowrap;
+}
+
+.emoji-icon {
+  font-size: 18px;
+  line-height: 20px;
+}
+
+/* --- options ------------------------------------------------------------ */
+
+#options {
+  grid-area: options;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 6px 10px;
+  min-height: 46px;
+  background: var(--panel);
+  border-top: 1px solid var(--line);
+  overflow-x: auto;
+  scrollbar-width: thin;
+}
+
+@media (min-width: 900px) {
+  #options {
+    border-top: 0;
+    border-bottom: 1px solid var(--line);
+  }
+}
+
+.group {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex: none;
+}
+
+.group[hidden] {
+  display: none;
+}
+
+.group-label {
+  color: var(--muted);
+  white-space: nowrap;
+}
+
+.group-body {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.swatch {
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  border: 2px solid transparent;
+  border-radius: 50%;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.25);
+  cursor: pointer;
+}
+
+.swatch.on {
+  border-color: var(--text);
+}
+
+.picker {
+  width: 28px;
+  height: 26px;
+  padding: 0;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: var(--panel-hi);
+  cursor: pointer;
+}
+
+.chip {
+  min-height: 28px;
+  padding: 0 10px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--panel-hi);
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.chip.on {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--accent-ink);
+}
+
+.chip.danger {
+  border-color: #7a3430;
+  color: #ffb4ad;
+}
+
+.icon-chip {
+  display: inline-flex;
+  align-items: center;
+  padding: 0 8px;
+}
+
+.range {
+  width: 120px;
+  accent-color: var(--accent);
+}
+
+.readout {
+  min-width: 42px;
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.emoji-grid {
+  max-width: min(52vw, 460px);
+  overflow-x: auto;
+  scrollbar-width: thin;
+}
+
+button.emoji {
+  min-width: 32px;
+  min-height: 32px;
+  padding: 0;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  background: transparent;
+  font-size: 20px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+button.emoji.on {
+  border-color: var(--accent);
+  background: var(--panel-hi);
+}
+
+.hint {
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.hint[hidden] {
+  display: none;
+}
+
+/* --- stage -------------------------------------------------------------- */
+
+#stage {
+  grid-area: stage;
+  position: relative;
+  overflow: hidden;
+  background: var(--stage);
+  /* The canvas handles its own gestures. */
+  touch-action: none;
+}
+
+#stage.dropping {
+  outline: 2px dashed var(--accent);
+  outline-offset: -6px;
+}
+
+#canvas {
+  display: block;
+}
+
+#drop-hint {
+  position: absolute;
+  left: 50%;
+  bottom: 12px;
+  transform: translateX(-50%);
+  margin: 0;
+  padding: 6px 12px;
+  border-radius: 999px;
+  background: rgba(0, 0, 0, 0.5);
+  color: var(--muted);
+  font-size: 12px;
+  white-space: nowrap;
+  pointer-events: none;
+  transition: opacity 0.2s;
+}
+
+#stage.has-content #drop-hint {
+  opacity: 0;
+}
+
+#drop-hint kbd {
+  padding: 1px 5px;
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  font: inherit;
+}
+
+/* The inline text editor. A real textarea is what makes IME input work. */
+.aka-text-input {
+  position: absolute;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  outline: 1px dashed rgba(59, 130, 246, 0.9);
+  background: transparent;
+  resize: none;
+  overflow: hidden;
+  white-space: pre;
+  caret-color: currentColor;
+}
+
+.aka-text-input[hidden] {
+  display: none;
+}
+
+/* --- chrome ------------------------------------------------------------- */
+
+#toast {
+  position: fixed;
+  left: 50%;
+  bottom: calc(16px + env(safe-area-inset-bottom));
+  transform: translate(-50%, 12px);
+  padding: 8px 16px;
+  border-radius: 999px;
+  background: rgba(20, 22, 26, 0.94);
+  border: 1px solid var(--line);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.18s, transform 0.18s;
+  z-index: 10;
+}
+
+#toast.on {
+  opacity: 1;
+  transform: translate(-50%, 0);
+}
+
+#loading {
+  position: fixed;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  background: var(--bg);
+  color: var(--muted);
+  z-index: 20;
+}

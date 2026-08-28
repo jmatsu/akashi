@@ -1,0 +1,7 @@
+node_modules/
+dist/
+dev-dist/
+crate/target/
+src/wasm/
+*.log
+.DS_Store
