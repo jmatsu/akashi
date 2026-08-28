@@ -95,11 +95,9 @@ export type Obj = TextObj | ShapeObj | ArrowObj | MarkerObj | EmojiObj | RegionO
 export type ObjType = Obj['type']
 
 /**
- * The object type behind a tag. `Extract<Obj, { type: K }>` looks like it does
- * this and does not: `ShapeObj` is tagged `'rect' | 'ellipse'`, so extracting
- * either one asks for a member whose tag is exactly that and finds none. This
- * distributes over the union and keeps `ShapeObj` for both of its tags, which
- * is what makes a per-type table checkable field by field.
+ * The object type behind a tag. `Extract<Obj, { type: K }>` does not work here:
+ * `ShapeObj` is tagged `'rect' | 'ellipse'`, and extracting either one asks for
+ * a member tagged exactly that. This keeps `ShapeObj` for both of its tags.
  */
 export type ObjOf<K extends ObjType, O = Obj> = O extends { type: infer T }
   ? K extends T
@@ -116,10 +114,8 @@ export interface Doc {
   /** Paper colour behind everything. `null` renders as transparent. */
   background: string | null
   /**
-   * What the user calls this document, and so what its exports are named.
-   * `null` for one that has never been named, which falls back to a timestamp
-   * (see `filename.ts`). Travels inside a draft, so it is a name and never a
-   * path -- `cleanName` is what says which is which.
+   * What the exports are named. `null` falls back to a timestamp. It travels
+   * inside a draft, so it is a name and never a path -- see `cleanName`.
    */
   name: string | null
   objects: Obj[]
@@ -176,17 +172,13 @@ export const DEFAULT_SETTINGS: Settings = {
 }
 
 /**
- * Which object field each tool setting drives, per object type.
+ * Which object field each tool setting drives, per object type -- the single
+ * statement of what is stylable about a `text`, and so on. Three things derive
+ * from it: writing settings onto a selected object, reading a clicked object's
+ * style back into the toolbar, and which controls the options bar shows. Stated
+ * once, none of the three can drift into a control that edits nothing.
  *
- * This is the single statement of "what is stylable about a `text`" and so on.
- * Three things read it: writing settings onto a selected object, reading a
- * clicked object's style back into the toolbar, and deciding which controls the
- * options bar shows. Stating it once is what keeps those three in agreement --
- * a control that edits a field nothing applies, or a field with no control, is
- * otherwise a silent failure.
- *
- * Only `region.strength` is left out: it is stored per mode, so it is copied by
- * hand at the two sites that need it.
+ * Only `region.strength` is left out; it is stored per mode.
  */
 type StyleField<T extends Obj> = readonly [Exclude<keyof T, 'id' | 'type'>, keyof Settings]
 

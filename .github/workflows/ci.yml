@@ -1,17 +1,12 @@
 # Build, lint, test and format, then publish the result to GitHub Pages.
 #
-# The jobs are split by toolchain rather than by check, so nothing is installed
-# twice: `web` needs only Node, `crate` only Rust, and `build` -- the one job
-# that needs both, because the TypeScript imports the generated wasm bindings --
-# typechecks, runs the web tests and produces the bundle.
+# Jobs are split by toolchain, not by check, so nothing is installed twice:
+# `web` needs only Node, `crate` only Rust, and `build` needs both. Only the
+# Rust jobs take the full image -- wasm-bindgen's proc macros need a host
+# linker; the rest run on `ubuntu-slim`.
 #
-# Anything that does not compile Rust runs on `ubuntu-slim`; the crate needs a
-# host linker for the proc-macro half of wasm-bindgen, so those jobs take the
-# full image.
-#
-# Actions are pinned to a commit, since a tag can be moved to point at something
-# else; the trailing comment is the release that commit was, and is what tells
-# you -- or Dependabot -- what a bump would be moving away from.
+# Actions are pinned to a commit, since a tag can be moved. The trailing comment
+# is the release that commit was, so a bump says what it is moving away from.
 name: CI
 
 on:
@@ -66,8 +61,8 @@ jobs:
     name: Typecheck, test & build
     runs-on: ubuntu-latest
     env:
-      # A project site is served under the repository name; `vite.config.ts`
-      # takes that as `base`. A custom domain at the origin root would be `/`.
+      # A project site is served under the repository name, which
+      # `vite.config.ts` takes as `base`. A custom domain would be `/`.
       AKA_BASE: /${{ github.event.repository.name }}/
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1

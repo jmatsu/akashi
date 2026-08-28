@@ -1,12 +1,11 @@
 //! Pixel-region processing for aka.
 //!
-//! The editor keeps region edits non-destructive: every redaction is an object
-//! in the document, and on each frame the renderer hands the pixels currently
-//! under that object to [`apply_region`]. That means these functions run on
-//! every repaint of a drag, which is why they live in wasm rather than JS.
+//! Region edits are non-destructive: every redaction is an object, and the
+//! renderer hands the pixels currently under it to [`apply_region`] on each
+//! frame of a drag. That repetition is why this lives in wasm rather than JS.
 //!
-//! All buffers are RGBA8, row-major, exactly `width * height * 4` bytes long --
-//! the layout of a canvas `ImageData`.
+//! All buffers are RGBA8, row-major, `width * height * 4` bytes -- the layout
+//! of a canvas `ImageData`.
 
 use wasm_bindgen::prelude::*;
 
@@ -18,10 +17,8 @@ pub const MODE_BLACKOUT: u32 = 1;
 /// Erase the region. `strength` is how much alpha to remove, 0.0..=1.0.
 pub const MODE_TRANSPARENT: u32 = 2;
 
-/// Apply a region effect in place.
-///
-/// Unknown `mode` values leave the buffer untouched, so a document written by a
-/// newer version of aka degrades to "no effect" rather than to corrupt pixels.
+/// Apply a region effect in place. An unknown `mode` leaves the buffer
+/// untouched, so a document from a newer aka degrades to "no effect".
 #[wasm_bindgen]
 pub fn apply_region(data: &mut [u8], width: u32, height: u32, mode: u32, strength: f32) {
     let w = width as usize;
@@ -86,8 +83,8 @@ fn blackout(data: &mut [u8], strength: f32) {
         px[0] = (px[0] as f32 * keep) as u8;
         px[1] = (px[1] as f32 * keep) as u8;
         px[2] = (px[2] as f32 * keep) as u8;
-        // A fully opaque bar must cover whatever is underneath, even where the
-        // source pixels were themselves transparent.
+        // An opaque bar must cover what is underneath, even where the source
+        // pixels were themselves transparent.
         px[3] = px[3].max(floor);
     }
 }

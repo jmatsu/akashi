@@ -24,12 +24,9 @@ const GRAB_SLOP = 8
 const HANDLE_GRAB = HANDLE_SIZE / 2 + GRAB_SLOP
 
 /**
- * A drag in progress.
- *
- * `create`, `move` and `resize` all hold the live object plus a snapshot of how
- * it looked when the drag began, and recompute from that snapshot on every
- * pointer event. Writing the result straight into the live object avoids a deep
- * clone per event while keeping the drag free of accumulated drift.
+ * A drag in progress. `create`, `move` and `resize` hold the live object plus a
+ * snapshot from when the drag began, and recompute from that snapshot every
+ * event -- no deep clone per event, and no accumulated drift.
  */
 type Drag =
   | { kind: 'none' }
@@ -59,9 +56,8 @@ export class Editor {
   private readonly viewCtx: CanvasRenderingContext2D
   private image: CanvasImageSource | null = null
   /**
-   * The bytes `image` was decoded from, kept so a draft can carry the original
-   * screenshot rather than a re-encode of the annotated one. Held only while a
-   * document is open, and never sent anywhere on its own.
+   * The bytes `image` was decoded from, so a draft can carry the original
+   * screenshot rather than a re-encode. Held only while a document is open.
    */
   private imageSource: Blob | null = null
 
@@ -142,8 +138,7 @@ export class Editor {
 
   /**
    * Replace the document with an image, sized to it. `name` is the file it came
-   * from, where it came from one -- a pasted or dropped blob has no name to
-   * take, and that document stays unnamed.
+   * from; a pasted or dropped blob has none, and stays unnamed.
    */
   setImage(
     image: HTMLImageElement | ImageBitmap,
@@ -159,9 +154,8 @@ export class Editor {
   }
 
   /**
-   * Rename the document. Kept out of the undo history on purpose: history is
-   * the drawing, and an undo reaching back past a rename to restore the old one
-   * would be a surprise, not a convenience.
+   * Rename the document. Kept out of the undo history: history is the drawing,
+   * and an undo that restored the old name would be a surprise.
    */
   setName(name: string): void {
     const trimmed = name.trim()
@@ -170,15 +164,11 @@ export class Editor {
   }
 
   /**
-   * Reopen a document that was drawn somewhere else -- the far side of a draft
-   * handed over between devices. `image` is null for one started from the blank
-   * canvas; the bitmap and the bytes it was decoded from travel together,
-   * because a document with one and not the other cannot be handed on again.
+   * Reopen a document drawn somewhere else -- the far side of a draft handed
+   * between devices. `image` is null for one started from the blank canvas.
    *
-   * Ids are reissued here. They come from a counter, so two devices that both
-   * started at zero would otherwise hand back colliding ids the moment anything
-   * new is drawn on top -- and this is also where a draft carrying duplicate
-   * ids of its own gets normalised, import being where untrusted data lands.
+   * Ids are reissued: they come from a counter, so two devices that both
+   * started at zero would collide the moment anything new is drawn.
    */
   restoreDraft(doc: Doc, image: { bitmap: ImageBitmap; source: Blob } | null): void {
     this.image = image?.bitmap ?? null
@@ -219,11 +209,9 @@ export class Editor {
   }
 
   /**
-   * Record the current state as an undo step. Call once per finished edit.
-   *
-   * `mergeKey` folds a burst of related edits into a single step: dragging a
-   * size slider fires on every tick, and undo should step over the whole drag
-   * rather than replaying it one pixel at a time.
+   * Record the current state as an undo step; call once per finished edit.
+   * `mergeKey` folds a burst of related edits into one, so undo steps over a
+   * whole slider drag rather than replaying it tick by tick.
    */
   commit(mergeKey?: string): void {
     const next = this.snapshot()
@@ -334,7 +322,7 @@ export class Editor {
       this.commit(`settings:${o.id}`)
     }
     // The settings changed even when the object did not, so the options bar is
-    // told either way. A redundant refresh is cheap: it early-outs unchanged.
+    // told either way.
     this.emit()
   }
 
@@ -347,8 +335,8 @@ export class Editor {
   zoomToFit(): void {
     const { clientWidth: w, clientHeight: h } = this.opts.stage
     const pad = 32
-    // Guard against a stage that has not been laid out yet: a zero size would
-    // otherwise leave the scale NaN and blank the canvas for good.
+    // A stage that has not been laid out yet would leave the scale NaN and
+    // blank the canvas for good.
     const fit = w > pad && h > pad ? Math.min((w - pad) / this.doc.width, (h - pad) / this.doc.height) : 1
     // Never blow a small image up on load; fitting down is what people expect.
     this.scale = clamp(Math.min(fit, 1), MIN_SCALE, MAX_SCALE)
@@ -406,10 +394,9 @@ export class Editor {
   }
 
   /**
-   * Schedule a repaint for a change the scene canvas does not care about --
-   * pan, zoom, selection, a resized viewport. Redrawing the scene for those
-   * would re-run every region effect (a `getImageData`/wasm/`putImageData`
-   * round trip each) for a pixel-identical result.
+   * Schedule a repaint for a change the scene does not care about -- pan, zoom,
+   * selection, a resize. Rebuilding it would re-run every region effect for a
+   * pixel-identical result.
    */
   private requestViewRender(): void {
     this.schedule()
@@ -447,8 +434,7 @@ export class Editor {
     const w = this.doc.width * this.scale
     const h = this.doc.height * this.scale
 
-    // A checkerboard behind the page makes erased regions obviously transparent
-    // rather than "white".
+    // A checkerboard makes erased regions read as transparent, not white.
     if (this.checker) {
       ctx.save()
       ctx.fillStyle = this.checker
@@ -477,8 +463,8 @@ export class Editor {
   /** Render at 1:1 and hand back a PNG. Selection chrome is never included. */
   async toBlob(): Promise<Blob> {
     renderScene(this.sceneCtx, this.doc, this.image)
-    // An open text edit is the only thing that render draws differently, so it
-    // is the only case where the scene now needs rebuilding.
+    // An open text edit is the only thing rendered differently above, so it is
+    // the only case where the scene is now stale.
     if (this.editingId !== null) this.sceneDirty = true
     return new Promise((resolve, reject) => {
       this.scene.toBlob(
@@ -517,8 +503,8 @@ export class Editor {
     }
     if (this.pointers.size > 2) return
 
-    // A click on the canvas is what confirms a modal edit, and is consumed by
-    // doing so rather than also starting the next object.
+    // A click on the canvas confirms a modal edit, and is consumed by doing so
+    // rather than also starting the next object.
     if (this.confirmPendingEdit()) return
     // Middle-click pans, as it does in every other canvas tool.
     if (e.button === 1) {
@@ -526,8 +512,8 @@ export class Editor {
       return
     }
     if (this.tool === 'text') {
-      // Suppress the compatibility `mousedown`, whose default action would move
-      // focus to the body and blur the editor we are about to open.
+      // The compatibility `mousedown` would move focus to the body and blur the
+      // editor we are about to open.
       e.preventDefault()
     }
 
@@ -633,8 +619,8 @@ export class Editor {
     if (this.drag.distance < 1) return
 
     const scale = clamp((this.drag.scale * distance) / this.drag.distance, MIN_SCALE, MAX_SCALE)
-    // Anchor the document point that was under the original midpoint, then add
-    // however far the midpoint itself travelled -- pinch and pan in one gesture.
+    // Anchor the point under the original midpoint, then add how far the
+    // midpoint travelled -- pinch and pan in one gesture.
     const anchor = {
       x: (this.drag.center.x - this.drag.tx) / this.drag.scale,
       y: (this.drag.center.y - this.drag.ty) / this.drag.scale,
@@ -662,17 +648,13 @@ export class Editor {
   // --- select / move / resize -------------------------------------------
 
   /**
-   * Which piece of the selection's chrome is under a screen point: a handle, or
-   * the dashed box (`handle: null`), or nothing.
+   * Which piece of the selection's chrome is under a screen point: a handle,
+   * the dashed box (`handle: null`), or nothing. Stated once, so pointer
+   * handling and the hover cursor agree on what a click will do.
    *
-   * The precedence lives here alone, so pointer handling and the hover cursor
-   * cannot disagree about what a click will do. The chrome stays live under
-   * every tool, not just the select tool: it is drawn the moment something is
-   * selected -- including the object you have just finished drawing -- and a
-   * control that is visible but inert is worse than losing the occasional new
-   * stroke that happens to start on one. The object's body is deliberately not
-   * chrome: it is large and ambiguous, and claiming it would make drawing over
-   * an existing shape impossible.
+   * The chrome stays live under every tool -- a visible control that does
+   * nothing is worse than the odd stroke lost to it. The object's body is not
+   * chrome: claiming it would make drawing over an existing shape impossible.
    */
   private chromeAt(screen: Pt): { sel: Obj; handle: Handle | null } | null {
     const sel = this.selected()
@@ -682,8 +664,7 @@ export class Editor {
       (h) => Math.abs(h.x - screen.x) <= HANDLE_GRAB && Math.abs(h.y - screen.y) <= HANDLE_GRAB,
     )
     if (handle) return { sel, handle }
-    // Screen pixels, like the box itself, so the grab strip stays the same
-    // width at any zoom.
+    // Screen pixels, so the grab strip is the same width at any zoom.
     return onRectBorder(screen, chrome.box, GRAB_SLOP) ? { sel, handle: null } : null
   }
 
@@ -719,8 +700,8 @@ export class Editor {
   }
 
   private updateCursor(screen?: Pt): void {
-    // The chrome advertises itself whatever the tool is, matching what clicking
-    // there will actually do.
+    // The chrome advertises itself whatever the tool is, matching what a click
+    // there will do.
     const chrome = screen ? this.chromeAt(screen) : null
     if (chrome) this.opts.canvas.style.cursor = chrome.handle?.cursor ?? 'move'
     else if (this.tool !== 'select')
@@ -825,7 +806,7 @@ export class Editor {
   private updateCreate(obj: Obj, start: Obj, doc: Pt, shift: boolean): void {
     if (obj.type === 'marker') {
       const last = obj.points[obj.points.length - 1]
-      // Thin out the stream: sub-pixel samples only bloat the document.
+      // Thin the stream out: sub-pixel samples only bloat the document.
       if (Math.hypot(doc.x - last.x, doc.y - last.y) * this.scale >= 2) obj.points.push(doc)
       return
     }
@@ -834,7 +815,7 @@ export class Editor {
 
   private finishCreate(obj: Obj): void {
     // A click with no drag leaves a degenerate object; drop it rather than
-    // littering the document with invisible items.
+    // litter the document with invisible items.
     if (isDegenerate(obj)) {
       this.remove(obj)
       this.selectedId = null
@@ -872,17 +853,11 @@ export class Editor {
   }
 
   /**
-   * Confirm whatever is mid-edit, if anything, and report whether there was
-   * something to confirm.
-   *
-   * Text is the only tool with a modal edit today: every other tool commits the
-   * moment its drag ends, so there is nothing left hanging. When one does
-   * exist, clicking away from it means "done" -- so the click commits and drops
-   * back to the select tool instead of creating another object. After finishing
-   * a label you almost always want to move or restyle it, not type a second one.
-   *
-   * Choosing a tool from the toolbar is left alone: `setTool` confirms the edit
-   * too, but an explicit tool choice must win over this default.
+   * Confirm whatever is mid-edit, and report whether there was anything to
+   * confirm. Text is the only tool with a modal edit; the rest commit when
+   * their drag ends. Clicking away means "done", so the click commits and drops
+   * back to the select tool -- a finished label is usually moved or restyled,
+   * not followed by a second one. An explicit tool choice still wins.
    */
   private confirmPendingEdit(): boolean {
     if (this.editingId === null) return false
@@ -904,8 +879,8 @@ export class Editor {
     this.textarea.hidden = false
     this.textarea.value = o.text
     this.positionTextarea()
-    // Synchronous, and so still inside the user gesture -- which is what makes
-    // the on-screen keyboard open on iOS.
+    // Synchronous, so still inside the user gesture -- which is what opens the
+    // on-screen keyboard on iOS.
     this.textarea.focus()
     this.textarea.setSelectionRange(o.text.length, o.text.length)
     this.requestRender()
@@ -921,7 +896,7 @@ export class Editor {
       if (this.selectedId === o.id) this.selectedId = null
     }
     // The scene skipped this object while the overlay stood in for it, so a
-    // render is due even when the text came back unchanged and `commit` no-ops.
+    // render is due even when `commit` no-ops.
     this.requestRender()
     this.commit()
   }

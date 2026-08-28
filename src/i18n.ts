@@ -1,12 +1,11 @@
 /**
- * The runtime half of i18n: which locale is active, how the page is told about
- * it, and how a change is broadcast. The catalogs themselves live in
- * `src/locales/`, which stays DOM-free so the build can read them too.
+ * The runtime half of i18n: which locale is active, how the page is told and
+ * how a change is broadcast. The catalogs live in `src/locales/`, which stays
+ * DOM-free so the build can read them too.
  *
- * Markup declares its own strings through `data-i18n*` attributes rather than
- * being written out from JavaScript, so `index.html` still reads as the page it
- * describes -- and so the literals it ships with (English, the default locale)
- * are what a viewer sees before the module has run.
+ * Markup declares its strings through `data-i18n*` attributes, so `index.html`
+ * still reads as the page it describes, and its English literals are what a
+ * viewer sees before this module has run.
  */
 
 import { DEFAULT_LOCALE, LOCALE_NAMES, format, isLocale, isMessageKey } from './locales'
@@ -62,20 +61,12 @@ function apply(): void {
 }
 
 /**
- * Fill in everything the markup declares:
+ * Fill in everything the markup declares: `data-i18n` (text), `-html` (inner
+ * HTML, for the few messages carrying `<kbd>`), `-title`, `-label`
+ * (`aria-label`), `-placeholder` and `-content` (for `<meta>`).
  *
- * - `data-i18n`          text content
- * - `data-i18n-html`     inner HTML, for the few messages carrying `<kbd>` and
- *                        friends. Catalog values are authored in this repo and
- *                        never hold user input.
- * - `data-i18n-title`    the `title` tooltip
- * - `data-i18n-label`    `aria-label`
- * - `data-i18n-placeholder` the `placeholder` of an input
- * - `data-i18n-content`  the `content` attribute, for `<meta>`
- *
- * A `data-shortcut` alongside a title is appended in parentheses, which keeps
- * key names such as `Ctrl/Cmd+Z` -- identical in every language -- out of the
- * catalogs.
+ * A `data-shortcut` alongside a title is appended in parentheses, keeping key
+ * names such as `Ctrl/Cmd+Z` -- the same everywhere -- out of the catalogs.
  */
 export function applyStaticText(root: ParentNode = document): void {
   each(root, 'data-i18n', (node, text) => {
@@ -114,8 +105,7 @@ function each(root: ParentNode, attr: string, set: (node: HTMLElement, text: str
  * forking it into a second installable one.
  */
 function pointAtManifest(): void {
-  // Only the production build has a manifest; the dev server has no link to
-  // repoint.
+  // Only the production build has a manifest to repoint.
   const link = document.querySelector<HTMLLinkElement>('link[rel="manifest"]')
   if (!link) return
   const base = import.meta.env.BASE_URL
@@ -128,8 +118,8 @@ function remembered(): Locale | null {
     const saved = localStorage.getItem(STORAGE_KEY)
     return saved && isLocale(saved) ? saved : null
   } catch {
-    // Storage can be denied outright (private windows, blocked cookies). The
-    // app just falls back to detection every time.
+    // Storage can be denied (private windows, blocked cookies); the app then
+    // falls back to detection every time.
     return null
   }
 }

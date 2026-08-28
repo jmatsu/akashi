@@ -97,9 +97,8 @@ test('a draft survives the round trip through a PNG', () => {
 test('the pixels are left exactly as they were', () => {
   const original = fakePng()
   const carrier = carry(original)
-  // Cut the inserted chunk back out -- signature plus IHDR is where it went --
-  // and what is left has to be the original file, byte for byte. A draft is a
-  // PNG that any viewer still renders.
+  // Cut the inserted chunk back out and what is left must be the original file,
+  // byte for byte: a draft is a PNG that any viewer still renders.
   const stripped = new Uint8Array(original.length)
   stripped.set(carrier.subarray(0, AFTER_IHDR), 0)
   stripped.set(carrier.subarray(carrier.length - (original.length - AFTER_IHDR)), AFTER_IHDR)
@@ -143,8 +142,8 @@ test('a mangled payload costs the annotations, not the file', () => {
 })
 
 test('the probe answers from the head of a file, and only for a draft', () => {
-  // What `main.ts` reads before deciding to read the rest: the first bytes are
-  // enough to keep an ordinary screenshot out of the heap.
+  // What `main.ts` reads before deciding to read the rest, keeping an ordinary
+  // screenshot out of the heap.
   const carrier = carry(fakePng())
   assert.equal(mayCarryDraft(carrier.subarray(0, 512) as Uint8Array<ArrayBuffer>), true)
   assert.equal(mayCarryDraft(fakePng()), false)
@@ -204,9 +203,8 @@ test('a marker keeps its points and loses them if they are not points', () => {
 })
 
 test('an object naming a method of Object is not an object', () => {
-  // `type: 'toString'` finds a function on the prototype of the field table if
-  // it is looked up carelessly, and an object of a type nothing draws crashes
-  // the geometry rather than being dropped here.
+  // Looked up carelessly, `type: 'toString'` finds a function on the field
+  // table's prototype and passes every check.
   const sane = sanitizeDoc({
     width: 800,
     height: 600,
@@ -217,8 +215,8 @@ test('an object naming a method of Object is not an object', () => {
 })
 
 test('a NaN slipped in as a coordinate is not a coordinate', () => {
-  // JSON has no NaN, so this is what a hand-edited or fuzzed draft looks like
-  // by the time it reaches us -- and NaN would spread through the geometry.
+  // JSON has no NaN, so this is what a fuzzed draft looks like on arrival --
+  // and NaN would spread through the geometry.
   const sane = sanitizeDoc({
     width: 800,
     height: 600,

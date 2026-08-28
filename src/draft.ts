@@ -1,40 +1,29 @@
 /**
- * The draft container: a real PNG, handed out under a name of aka's own.
+ * The draft container: exactly the PNG that "Save" produces, with the editing
+ * session tucked into a private chunk beside the pixels. A draft crosses
+ * devices over whatever the OS already offers -- AirDrop, a cable, a shared
+ * folder -- all of which move files, and a PNG is carried as-is.
  *
- * A draft has to cross between devices without a server, so the transport is
- * whatever the operating system already offers -- AirDrop, Quick Share, a cable,
- * a shared folder. Those all move *files*, and a PNG is the one payload they
- * carry as-is. So a draft is exactly the PNG `保存` produces, with the session
- * tucked into a private PNG chunk beside the pixels.
+ * It goes out as `.aka` because a draft holds the *original* image: passing one
+ * on undoes every redaction drawn over it, and under a `.png` name it would be
+ * indistinguishable from the flattened export that should have been sent. The
+ * extension also keeps it out of iOS Photos, which re-encodes and drops the
+ * chunk. Reading goes by bytes, not name, so a renamed draft still opens.
  *
- * It goes out as `.aka` rather than `.png` all the same, because the two files
- * are not interchangeable: a draft carries the *original* image, so passing one
- * on undoes every redaction drawn over it -- and under a `.png` name it is
- * indistinguishable from the flattened export that should have been sent
- * instead. The extension keeps a draft out of the places an image is shared by
- * reflex (a chat app shows a file, not a preview), and off the path that would
- * corrupt it anyway: on iOS it lands in Files rather than Photos, which
- * re-encodes and drops the chunk.
- *
- * Nothing is read back by name, though -- `mayCarryDraft` looks at the bytes --
- * so a draft that arrives renamed still opens as one.
- *
- * Nothing here touches the DOM, so the format is exercised by the tests directly.
+ * No DOM here, so the format is exercised by the tests directly.
  */
 
-// `png.ts` is named with its extension because `scripts/make-icons.mjs` and the
-// tests load these modules through Node directly, which does not guess at one.
+// `png.ts` is named with its extension because the icon script and the tests
+// load these modules through Node, which does not guess at one.
 import { cleanName } from './filename.ts'
 import { PNG_SIGNATURE, chunk, isPng, readChunks } from './png.ts'
 import type { Bytes } from './png.ts'
 import type { ArrowStyle, Doc, Obj, ObjOf, ObjType, Pt, RegionMode } from './types'
 
 /**
- * The chunk that carries the session, named by PNG's case conventions:
- * `a` ancillary (a decoder may ignore it), `k` private (not a registered type),
- * `D` reserved-bit uppercase (required), `F` unsafe to copy -- the session
- * describes *these* pixels, so an editor that re-encodes the image is expected
- * to drop it rather than carry a draft that no longer matches what it shows.
+ * The chunk carrying the session, named by PNG's case conventions: ancillary,
+ * private, reserved-bit uppercase, and unsafe to copy -- the session describes
+ * *these* pixels, so a re-encoding editor should drop it rather than carry it.
  */
 export const DRAFT_CHUNK = 'akDF'
 
@@ -59,22 +48,16 @@ export interface Draft {
 // --- public API --------------------------------------------------------
 
 /**
- * Splice `draft` into `flatPng` (the flattened render) and hand back the pieces
- * of the file to save or share.
- *
- * They are deliberately not joined here. The screenshot inside a draft is
- * megabytes, and handing `File` the pieces lets it do the one copy that has to
- * happen rather than the three that building a single buffer would take. The
- * pixels are passed through untouched.
+ * Splice `draft` into `flatPng` (the flattened render) and hand back the file's
+ * pieces, unjoined: `File` then does the one copy a megabyte screenshot needs.
  */
 export function encodeDraft(flatPng: Bytes, draft: Draft): Bytes[] {
   const chunks = readChunks(flatPng)
   // Only ever called with the canvas' own PNG, so a failure here is a bug
   // rather than bad input -- unlike `decodeDraft`, which is handed user files.
   if (chunks === null) throw new Error('aka: not a PNG')
-  // Right after IHDR: legal for an ancillary chunk, and it means a reader finds
-  // the session without walking the image data. There is always a chunk after
-  // IHDR, because parsing at all required reaching IEND.
+  // Right after IHDR: legal for an ancillary chunk, and a reader finds the
+  // session without walking the image data.
   const at = chunks[1].start
   return [flatPng.subarray(0, at), ...chunk(DRAFT_CHUNK, payload(draft)), flatPng.subarray(at)]
 }
@@ -83,16 +66,10 @@ export function encodeDraft(flatPng: Bytes, draft: Draft): Bytes[] {
 export const PROBE_BYTES = 512
 
 /**
- * Whether the head of a file is worth reading the rest of.
- *
- * Opening an ordinary screenshot is the common case by far, and it should not
- * cost a copy of the whole file in the heap to find no draft in it. The first
- * few hundred bytes answer that: the writer above puts the chunk directly after
- * IHDR, and a tool that moved it further in would have dropped it on the way,
- * the chunk being marked unsafe to copy.
- *
- * A false positive costs only the read it was avoiding, and `decodeDraft` then
- * says no.
+ * Whether the head of a file is worth reading the rest of. Opening an ordinary
+ * screenshot should not cost a copy of the whole file in the heap, and the
+ * chunk is written directly after IHDR, so the first bytes answer it. A false
+ * positive costs only the read it was avoiding.
  */
 export function mayCarryDraft(head: Bytes): boolean {
   if (!isPng(head)) return false
@@ -104,11 +81,9 @@ export function mayCarryDraft(head: Bytes): boolean {
 }
 
 /**
- * Read the session back out of a file the user opened.
- *
- * `null` means "no draft in here" -- a plain screenshot, or a draft whose chunk
- * a re-encoding tool dropped along the way. Both are ordinary images to the
- * caller, so this never throws on input it merely does not recognise.
+ * Read the session back out of a file the user opened. `null` means "no draft
+ * in here" -- a plain screenshot, or one whose chunk a re-encoding tool
+ * dropped. Both are ordinary images, so unrecognised input never throws.
  */
 export function decodeDraft(file: Bytes): Draft | null {
   const chunks = readChunks(file)
@@ -118,8 +93,8 @@ export function decodeDraft(file: Bytes): Draft | null {
     const data = found.start + 8
     return parsePayload(file.subarray(data, data + found.length))
   } catch {
-    // A truncated or hand-mangled chunk should cost the annotations, not the
-    // screenshot: fall back to opening the file as the image it still is.
+    // A mangled chunk should cost the annotations, not the screenshot: open
+    // the file as the image it still is.
     return null
   }
 }
@@ -127,11 +102,9 @@ export function decodeDraft(file: Bytes): Draft | null {
 // --- payload -----------------------------------------------------------
 
 /**
- * `u32 jsonLength | JSON | original image bytes`, big-endian to match PNG.
- *
- * The image keeps its own bytes rather than being base64'd into the JSON: a
- * screenshot is the bulk of a draft, and base64 would add a third to it. It
- * stays its own piece for the same reason `encodeDraft` returns pieces.
+ * `u32 jsonLength | JSON | original image bytes`, big-endian to match PNG. The
+ * image stays raw rather than base64 in the JSON, which would add a third to
+ * the bulk of a draft.
  */
 function payload(draft: Draft): Bytes[] {
   const json = new TextEncoder().encode(
@@ -164,11 +137,9 @@ function parsePayload(bytes: Bytes): Draft | null {
 
 /**
  * A draft arrives as a file from another device, so it is parsed rather than
- * trusted: a field of the wrong type would otherwise reach the renderer as a
- * `NaN` coordinate or a missing string and take the canvas down with it.
- *
- * Objects are checked one at a time and a bad one is dropped, because losing a
- * single arrow beats refusing the whole draft.
+ * trusted: a field of the wrong type would reach the renderer as a `NaN`
+ * coordinate and take the canvas down. Objects are checked one at a time and a
+ * bad one dropped -- losing a single arrow beats refusing the whole draft.
  */
 export function sanitizeDoc(value: unknown): Doc | null {
   if (!isRecord(value)) return null
@@ -176,8 +147,8 @@ export function sanitizeDoc(value: unknown): Doc | null {
   if (!isSize(width) || !isSize(height)) return null
   if (background !== null && typeof background !== 'string') return null
   if (!Array.isArray(objects)) return null
-  // The name is the one field that leaves the document and becomes a file on
-  // this device, so a draft's is cleaned rather than merely type-checked.
+  // The name becomes a file on this device, so it is cleaned rather than
+  // merely type-checked.
   return { width, height, background, name: cleanName(name), objects: objects.filter(isObj) }
 }
 
@@ -191,9 +162,9 @@ const points = (v: unknown): v is Pt[] =>
   Array.isArray(v) && v.every((p) => isRecord(p) && num(p.x) && num(p.y))
 
 /**
- * Membership in a string union, stated as a record so the compiler holds the
- * list complete: a member left out of a plain array would compile, and quietly
- * drop every object using it from an opened draft.
+ * Membership in a string union, as a record so the compiler holds the list
+ * complete: a member missing from a plain array would compile, and drop every
+ * object using it from an opened draft.
  */
 const oneOf =
   <T extends string>(allowed: Record<T, true>) =>
@@ -207,12 +178,9 @@ const REGION_MODES: Record<RegionMode, true> = { mosaic: true, blackout: true, t
 type Fields<T extends Obj> = { readonly [F in Exclude<keyof T, 'id' | 'type'>]: Check<T[F]> }
 
 /**
- * How each object type is checked on the way in.
- *
- * The mapped type is what makes this the single statement of it, the way
- * `STYLE_FIELDS` is for styling: a field added to the model with no check here,
- * or a check of the wrong type, does not compile. Otherwise a model that grew
- * would quietly drop objects out of an opened draft.
+ * How each object type is checked on the way in. The mapped type makes this the
+ * single statement of it: a model field with no check here, or a check of the
+ * wrong type, does not compile.
  */
 const OBJ_FIELDS: { readonly [K in ObjType]: Fields<ObjOf<K>> } = {
   text: { x: num, y: num, text: str, size: num, color: str },
@@ -236,18 +204,13 @@ const OBJ_FIELDS: { readonly [K in ObjType]: Fields<ObjOf<K>> } = {
 function isObj(value: unknown): value is Obj {
   if (!isRecord(value) || typeof value.id !== 'string' || typeof value.type !== 'string') return false
   // `hasOwn`, not a plain lookup: `type: 'toString'` would otherwise find a
-  // method on the prototype and pass every check, and an object of a type
-  // nothing draws reaches `bounds()`, which has no branch to answer with.
+  // method on the prototype and pass every check.
   if (!Object.hasOwn(OBJ_FIELDS, value.type)) return false
   const fields: Record<string, (v: unknown) => boolean> = OBJ_FIELDS[value.type as ObjType]
   return Object.entries(fields).every(([name, check]) => check(value[name]))
 }
 
-/**
- * Document dimensions, bounded by what browsers will actually give us: a canvas
- * larger than this fails to allocate, and the editor would come up blank rather
- * than telling anyone why.
- */
+/** Past this a canvas fails to allocate, and the editor comes up blank. */
 const MAX_SIZE = 16384
 
 function isSize(v: unknown): v is number {

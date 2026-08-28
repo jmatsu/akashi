@@ -8,11 +8,9 @@ export interface Rect {
 }
 
 /**
- * Widest of `lines` when set at `size`, in document units.
- *
- * Text is the one shape whose extent only the renderer can know. Passing the
- * measurement in rather than a canvas context keeps this module free of the
- * DOM, and gives the caller one place to set the font.
+ * Widest of `lines` when set at `size`, in document units. Text is the one
+ * shape whose extent only the renderer knows; passing the measurement in keeps
+ * this module free of the DOM.
  */
 export type Measure = (lines: readonly string[], size: number) => number
 
@@ -315,9 +313,9 @@ export function resize(target: Obj, start: Obj, handle: HandleId, p: Pt, keepAsp
 }
 
 /**
- * Whether an object is too small to be worth keeping -- a click that never
- * turned into a drag. Measured on the object's own geometry rather than its
- * padded bounds, so a zero-length arrow counts as degenerate too.
+ * Whether an object is too small to keep -- a click that never became a drag.
+ * Measured on its own geometry, not its padded bounds, so a zero-length arrow
+ * counts too.
  */
 export function isDegenerate(o: Obj): boolean {
   switch (o.type) {

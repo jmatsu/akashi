@@ -1,19 +1,12 @@
 /**
- * The little of the PNG container aka needs, in one place.
- *
- * Two things reach for it and neither wants a library: `draft.ts` splices a
- * private chunk into a rendered PNG, and `scripts/make-icons.mjs` writes the
- * icon set from scratch. What they share is the container -- an 8-byte
- * signature and a table of length/name/data/CRC frames -- so the framing and
- * the checksum are stated here once rather than in both.
+ * The little of the PNG container aka needs: an 8-byte signature and a table of
+ * length/name/data/CRC frames. `draft.ts` splices a private chunk into a
+ * rendered PNG with it, `scripts/make-icons.mjs` writes the icon set with it.
  *
  * No DOM, no Node: the app, the build script and the tests all load this.
  */
 
-/**
- * Byte views over a plain `ArrayBuffer` -- the only kind `Blob` and `File`
- * take, so the format's own types say so rather than casting at each call site.
- */
+/** Byte views over a plain `ArrayBuffer` -- the only kind `Blob` and `File` take. */
 export type Bytes = Uint8Array<ArrayBuffer>
 
 export const PNG_SIGNATURE = [0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]
@@ -41,8 +34,8 @@ export function readChunks(file: Bytes): Chunk[] | null {
     if (at + 12 + length > file.length) return null
     const name = String.fromCharCode(...file.subarray(at + 4, at + 8))
     chunks.push({ name, start: at, length })
-    // IEND ends the image. Anything appended past it is somebody else's, and
-    // browsers ignore it, so it is not read as a chunk here either.
+    // Anything appended past IEND is somebody else's, and browsers ignore it,
+    // so it is not read as a chunk here either.
     if (name === 'IEND') return chunks[0].name === 'IHDR' ? chunks : null
     at += 12 + length
   }
@@ -51,11 +44,8 @@ export function readChunks(file: Bytes): Chunk[] | null {
 }
 
 /**
- * Frame `parts` as one chunk, handed back as pieces rather than joined.
- *
- * The caller decides how they are assembled, which is what lets a draft carry a
- * multi-megabyte screenshot without the writer ever copying it: `File` takes
- * the pieces and does the single copy itself.
+ * Frame `parts` as one chunk, handed back as pieces rather than joined: `File`
+ * takes the pieces, so a multi-megabyte screenshot is copied once, not twice.
  */
 export function chunk(name: string, parts: readonly Bytes[]): Bytes[] {
   const head = new Uint8Array(8)
@@ -86,11 +76,9 @@ const CRC_TABLE = ((): Uint32Array => {
 const CRC_INIT = 0xffffffff
 
 /**
- * Fold more bytes into a running CRC, so one chunk can be checksummed across
- * the pieces it is made of without joining them first.
- *
- * Indexed rather than iterated: this is the one loop here that sees a whole
- * screenshot, and `for..of` on a typed array allocates a result per byte.
+ * Fold more bytes into a running CRC, so a chunk is checksummed across its
+ * pieces without joining them. Indexed, not iterated: `for..of` on a typed
+ * array allocates per byte, and this loop sees a whole screenshot.
  */
 function crcUpdate(crc: number, bytes: Bytes): number {
   let c = crc

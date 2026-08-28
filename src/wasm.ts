@@ -2,10 +2,8 @@ import init, { apply_region } from './wasm/aka_core.js'
 import type { RegionMode } from './types'
 
 /**
- * Must match the `MODE_*` constants in `crate/src/lib.rs`. Exported so the
- * tests exercise this exact mapping rather than a second copy of it -- the Rust
- * side treats an unknown mode as a no-op, so a numbering slip would silently
- * skip a redaction rather than fail.
+ * Must match the `MODE_*` constants in `crate/src/lib.rs`. Rust treats an
+ * unknown mode as a no-op, so a numbering slip would skip a redaction silently.
  */
 export const MODE: Record<RegionMode, number> = {
   mosaic: 0,
@@ -21,14 +19,12 @@ export async function initWasm(): Promise<void> {
 }
 
 /**
- * Run a region effect over `img` in place.
- *
- * wasm-bindgen copies the buffer in and the result back out, so the view we
- * hand it must alias the `ImageData` the caller will put back on the canvas.
+ * Run a region effect over `img` in place. The view handed to wasm must alias
+ * the `ImageData` the caller puts back on the canvas.
  */
 export function applyRegion(img: ImageData, mode: RegionMode, strength: number): void {
   if (!loaded) {
-    // Rendering before `initWasm()` resolves would silently drop redactions,
+    // Rendering before `initWasm()` resolves would drop redactions silently,
     // which is the one failure here that could leak something.
     throw new Error('aka: wasm core used before initWasm()')
   }

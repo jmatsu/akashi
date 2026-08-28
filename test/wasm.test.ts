@@ -6,15 +6,10 @@ import { MODE } from '../src/wasm.ts'
 import type { RegionMode } from '../src/types.ts'
 
 /**
- * Exercises the wasm core through the generated JS bindings, using the app's
- * own `MODE` map. That covers two things the Rust unit tests cannot: that
- * results are written back into the caller's typed array (which is what lets
- * the renderer hand it an `ImageData` view and put it straight back on the
- * canvas), and that each `RegionMode` reaches the effect it names -- the Rust
- * side no-ops on an unknown mode, so a numbering slip would silently skip a
- * redaction rather than fail.
- *
- * Requires `npm run build:wasm` to have produced `src/wasm/`.
+ * Exercises the wasm core through the generated bindings and the app's own
+ * `MODE` map -- two things the Rust tests cannot see: that results are written
+ * back into the caller's typed array, and that each `RegionMode` reaches the
+ * effect it names. Requires `npm run build:wasm`.
  */
 const wasm = await import('../src/wasm/aka_core.js')
 wasm.initSync({

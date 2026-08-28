@@ -1,208 +1,135 @@
 # aka
 
-開発者・QA・PO のための、軽量なスクリーンショット注釈ツール。
+A lightweight screenshot annotation tool for developers, QA and PO.
 
-ブラウザだけで動く PWA なので、Windows / macOS / Linux / Android / iOS のどれでも同じものが使えます。
-UI は英語と日本語に対応しています（ブラウザの言語で自動選択、ヘッダーから切り替え可）。
-画像はブラウザの外に出ません（アップロード先はありません）。Service Worker が全アセットを
-プリキャッシュするため、一度開けばオフラインでも動きます。
+**<https://jmatsu.github.io/aka/>**
 
-## できること
+aka is a PWA, so the same thing runs on Windows, macOS, Linux, Android and iOS.
+Images never leave your device — there is nowhere to upload them to — and a
+service worker precaches every asset, so it works offline once opened. The UI is
+in English and Japanese, picked from your browser's language and switchable from
+the header.
 
-| 機能 | 内容 |
+## Features
+
+| Tool | What it does |
 | --- | --- |
-| テキスト | サイズ・色を変更。日本語 IME 対応（キャンバス上でそのまま入力） |
-| 図形 | 四角 / 正円 / 楕円。枠線の太さ・色、塗りつぶし色（なしも可） |
-| 矢印 | 線 / 実線（片矢じり）/ 両端 の 3 種類。色・太さを変更 |
-| マーカー | 半透明の蛍光ペン。太さ・色を変更 |
-| 絵文字スタンプ | よく使う 32 種類。大きさを変更 |
-| 範囲加工 | モザイク（ブロックサイズ指定）/ 黒塗り / 透明化（強さ指定） |
+| Text | Any size and colour. Typed on the canvas through a real `<textarea>`, so IME input works |
+| Shapes | Rectangle, circle, ellipse. Stroke width and colour, optional fill |
+| Arrows | Line, single-headed or double-headed. Colour and width |
+| Marker | Translucent highlighter. Width and colour |
+| Stamps | 32 common emoji, resizable |
+| Redaction | Mosaic (block size), blackout, or erase to transparent (strength) |
 
-すべてのオブジェクトは**非破壊**です。モザイクをかけた後でも、その矩形を動かす・大きさを変える・
-削除する・元に戻すことができます。書き出す瞬間まで元画像は保持されます。
+Everything is **non-destructive**. A mosaic is an object like any other: move
+it, resize it, delete it, undo it. The original pixels are kept until you
+export.
 
-画像の取り込みは **貼り付け（Ctrl/Cmd+V）**、**ドラッグ＆ドロップ**、**画像を開く** の 3 通り。
-書き出しは PNG ファイル保存とクリップボードへのコピーの 2 つです。
+Images come in by paste (`Ctrl/Cmd+V`), drag and drop, or the file picker, and
+go out as a saved PNG or straight onto the clipboard. The name field in the
+header is what exports are called — it starts as the name of the image you
+opened, and falls back to `aka-<timestamp>.png` for a pasted one.
 
-## 保存名
+## Drafts: continuing on another device
 
-ヘッダーの名前欄が、書き出すファイルの名前になります。`bug-repro` と入れておけば
-保存は `bug-repro.png`、下書きは `bug-repro.aka` です。入力欄で `Ctrl/Cmd+S` を押せば
-そのまま保存できます（`Ctrl/Cmd+Z` は入力欄自身の取り消しのままです）。
+Annotate on your phone, finish on your desktop. **Draft** (`Ctrl/Cmd+Shift+S`)
+writes a `.aka` file that the other device's aka reopens with every object still
+selectable. Drop it, paste it or pick it like any image — aka checks the bytes,
+not the extension.
 
-初期値は開いた画像のファイル名です。`screenshot.png` を開けば `screenshot` が入り、
-保存すると `screenshot.png` に戻ります。貼り付けやドラッグ＆ドロップにはファイル名が無いので
-空のままで、その場合は従来どおり `aka-<日時>.png` になります。名前は下書きにも入るので、
-別の端末で開いても同じ名前で続けられます。
+A draft is a real PNG: the same flattened image "Save" produces, with the
+editing session stored in a private PNG chunk beside the pixels. AirDrop, Quick
+Share, a cable or a shared folder all carry it as-is, with no server involved.
 
-## 端末をまたいで続きから編集する
+It is named `.aka` rather than `.png` because **a draft contains the original
+image**, so passing one on undoes every blackout and mosaic drawn over it. The
+extension keeps it distinct from the flattened export you meant to send, and
+lands it in Files rather than Photos on iOS, which would re-encode it and strip
+the chunk. The cost is that Chrome will not share a `.aka` file through the
+share sheet, so there you get a download to pass on yourself.
 
-スマホで撮って注釈を入れ、続きは PC で——という受け渡しに対応しています。
-**下書き**ボタン（`Ctrl/Cmd+Shift+S`）で書き出したファイルをもう一方の端末の aka で開くと、
-オブジェクトを選び直せる状態のまま復元されます。
+## Keyboard shortcuts
 
-**下書きの中身は PNG です。** 見た目は「保存」で書き出すものと同じ注釈済み画像で、
-そこに編集セッション（オブジェクトと元画像）を PNG の私的チャンク `akDF` として
-埋め込んであります。だから AirDrop・クイック共有・ケーブル・共有フォルダといった、
-OS が既に持っている転送手段がそのまま使えます。画像は端末から端末へ直接渡るだけで、
-どこにも保存されません（aka にサーバはありません）。
-
-**ただし拡張子は `.png` ではなく `.aka` です。** 下書きには**元画像がそのまま入っている**ので、
-下書きを人に渡すと黒塗りやモザイクは無かったことになります。それが `.png` という名前だと、
-本来渡すべき「保存」の書き出しと見分けがつきません。`.aka` にしておけば、チャットアプリは
-プレビューではなくファイルとして扱い、iPhone は写真アプリではなくファイルアプリに落とします
-（写真アプリは PNG を再エンコードしてチャンクを落とすので、どのみちファイルアプリ経由が正解）。
-
-代わりに Chrome では共有シートが使えません。共有できるファイルを拡張子の許可リストで
-絞っていて `.aka` はそこに無いためで、その場合はダウンロードになります。
-落ちたファイルを自分で渡してください。
-
-取り込みに専用の操作はありません。ドラッグ＆ドロップ・貼り付け・「画像を開く」のどれでも、
-下書きが埋まっていれば下書きとして、無ければただの画像として開きます。判定は拡張子ではなく
-中身を見ているので、`.png` に付け替わってしまった下書きもそのまま開けます。逆に、途中で
-PNG を再エンコードするアプリを経由するとチャンクは失われ、注釈入りの画像だけが残ります。
-開くことはできますが、オブジェクトとしては編集できません。
-
-## キーボードショートカット
-
-| キー | 動作 |
+| Keys | Action |
 | --- | --- |
-| `V` `T` `R` `O` `E` `A` `M` `S` `G` | 選択 / テキスト / 四角 / 正円 / 楕円 / 矢印 / マーカー / スタンプ / 範囲加工 |
-| `Ctrl/Cmd+Z` / `Ctrl/Cmd+Shift+Z` | 元に戻す / やり直す |
-| `Delete` `Backspace` | 選択中のオブジェクトを削除 |
-| `Esc` | 選択解除（テキスト入力中は確定。ツールはそのまま） |
-| `Ctrl/Cmd+S` / `Ctrl/Cmd+Shift+S` | PNG 保存 / 下書き（`.aka`）を別の端末へ渡す（名前欄からも効きます） |
-| `Ctrl/Cmd+0` / `Ctrl/Cmd+1` | 全体表示 / 等倍 |
-| `Shift` + ドラッグ | 正方形・正円に固定、矢印を 45 度刻みに固定 |
+| `V` `T` `R` `O` `E` `A` `M` `S` `G` | Select / Text / Rectangle / Circle / Ellipse / Arrow / Marker / Stamp / Redact |
+| `Ctrl/Cmd+Z` / `Ctrl/Cmd+Shift+Z` | Undo / redo |
+| `Delete` `Backspace` | Delete the selection |
+| `Esc` | Deselect, or confirm the text you are typing |
+| `Ctrl/Cmd+S` / `Ctrl/Cmd+Shift+S` | Save a PNG / write a `.aka` draft |
+| `Ctrl/Cmd+0` / `Ctrl/Cmd+1` | Fit to window / actual size |
+| `Shift` + drag | Constrain to a square or circle; snap arrows to 45° |
 
-キャンバスは、何もない場所をドラッグ（または中ボタンドラッグ）で移動、
-`Ctrl` + ホイールまたはピンチで拡大縮小します。
+Drag empty canvas (or middle-drag anywhere) to pan; `Ctrl` + wheel or pinch to
+zoom. Whatever you just drew stays selected: drag a handle to resize it, drag
+the dashed outline to move it, both of which keep working while a drawing tool
+is active. Grabbing an object by its body is the select tool's job (`V`), so
+that you can draw on top of existing shapes.
 
-直前に描いたオブジェクトは選択されたまま残ります。選択枠まわりの操作は描画ツールを
-持ったままでも効くので、描いた直後にそのまま調整できます。
+## Setup
 
-- **ハンドル**（四隅などのつまみ）をドラッグ … サイズ変更、矢印なら端点の移動
-- **破線の選択枠**をドラッグ … 移動
-
-オブジェクトの本体をクリックして掴めるのは選択ツール `V` のときだけです（描画ツールでも
-本体を掴めてしまうと、既存の図形に重ねて描けなくなるため）。
-
-テキスト入力中にキャンバスの他の場所をクリックすると、その内容を確定して選択ツールに戻ります。
-このクリックは確定として消費されるので、続けて新しいテキストが作られることはありません
-（確定を要する編集状態を持つのは現状テキストだけです。他のツールはドラッグを離した時点で確定します）。
-ツールバーからツールを選んだ場合は、その選択が優先されます。
-
-## 構成
-
-最小構成の wasm + PWA です。依存は Vite・TypeScript・vite-plugin-pwa の 3 つだけで、
-UI フレームワークもキャンバスライブラリも i18n ライブラリも使っていません。ビルド後は
-gzip 圧縮で約 25KB（wasm 8KB を含む）、プリキャッシュ全体で 105KB です。
-
-```
-crate/src/lib.rs   Rust: 画素処理（モザイク / 黒塗り / 透明化）→ wasm
-src/types.ts       ドキュメントモデルと、型ごとの「編集できるスタイル」表
-src/geom.ts        当たり判定・バウンディングボックス・ハンドル・リサイズ（DOM 非依存）
-src/render.ts      ドキュメント 1:1 のシーンキャンバスへの描画
-src/editor.ts      状態・履歴・ポインタ操作・ビューポート
-src/ui.ts          ツールバーと文脈依存のオプションバー
-src/main.ts        起動・入出力・ショートカット・Service Worker
-src/draft.ts       下書きの読み書き（セッションの詰め込みと、受け取った文書の検証）
-src/filename.ts    保存名の正規化（名前をパスにしない）とファイル名の組み立て
-src/png.ts         PNG コンテナ（署名・チャンク・CRC）。アイコン生成スクリプトと共用
-src/brand.ts       色とアイコン定義（マニフェスト生成とアイコン生成が共有）
-src/i18n.ts        ロケールの決定・記憶・適用（DOM 側）
-src/locales/       カタログ本体（DOM 非依存。ビルドとテストからも読む）
-scripts/make-icons.mjs  PWA アイコンを図形から生成（画像ライブラリ不使用）
-```
-
-**型ごとの設定は 1 か所にまとめてあります。** `types.ts` の `STYLE_FIELDS` が
-「この型のどのフィールドを、どのツール設定が動かすか」を宣言し、選択オブジェクトへの
-反映・ツールバーへの吸い上げ・オプションバーの出し分けの 3 つがそこから導出されます。
-コントロールはあるのに反映されない／反映されるのにコントロールが無い、という
-静かな不整合が起きないようにするためです。
-
-**なぜ wasm なのか。** 範囲加工は非破壊なので、矩形をドラッグしている間は毎フレーム
-「その下にある画素」を取り出して加工し直しています。ここだけが計算量のある処理なので、
-wasm が担当するのはこの 1 関数（`apply_region`）だけです。描画・入力・UI は
-Canvas 2D と DOM のままにしてあり、そのおかげでテキスト入力に本物の `<textarea>` を
-重ねられ、日本語 IME がそのまま動きます。
-
-**なぜシーンキャンバスを分けているのか。** `getImageData` は変形行列を無視するため、
-拡大縮小した状態で範囲加工を正しく行うには、ドキュメント原寸のキャンバスが必要です。
-表示用キャンバスへはそれを転送するだけにしてあり、選択枠やハンドルは表示側にしか
-描かないので、書き出した PNG に写り込むことはありません。
-
-## 言語
-
-既定は英語で、初回はブラウザの言語（`navigator.languages`）を見て日本語なら日本語に切り替わります。
-ヘッダーのセレクトで手動変更でき、選択は `localStorage` に残るので次回以降は検出より優先されます。
-`<html lang>`・`<title>`・meta description・ウェブマニフェストも同時に切り替わります。
-
-文字列は `src/locales/` のカタログにまとめてあります。`en.ts` が基準で、他のロケールは
-`Catalog` 型を名乗るため、キーの過不足はコンパイルエラーになります。**言語に依らないものは
-カタログに入れません** — ブランド名 `aka`、絵文字、色のカラーコード、単位（`px` / `%`）、
-`Ctrl/Cmd+Z` のようなキー名などです。ショートカットは `data-shortcut` として
-ラベルに後付けされるので、カタログ側は語だけを持ちます。
-
-`index.html` の文言は `data-i18n` 属性で宣言し、起動時に流し込みます。マークアップに
-そのまま書いてある英語は既定ロケールの文面で、JavaScript が動く前に見えるのはこちらです
-（カタログとの一致は `test/i18n.test.ts` が見張っています）。
-
-ロケールを増やすときは `src/locales/` にカタログを 1 つ足し、`index.ts` の `CATALOGS` と
-`LOCALE_NAMES` に加えるだけです。ピッカーの選択肢もマニフェスト（`manifest.<locale>.webmanifest`）も
-そこから生成されます。
-
-## セットアップ
-
-Rust ツールチェーン（wasm ターゲット）と Node が必要です。
+You need Node and a Rust toolchain with the wasm target.
 
 ```sh
 curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y \
   --profile minimal -t wasm32-unknown-unknown
 curl -sSfL https://rustwasm.github.io/wasm-pack/installer/init.sh | sh
-export PATH="$HOME/.cargo/bin:$PATH"   # 恒久化する場合はシェルの設定に追記
+export PATH="$HOME/.cargo/bin:$PATH"
 
 npm install
 ```
 
-## 開発・ビルド・テスト
+## Development
 
 ```sh
-npm run dev           # wasm をビルドして Vite の開発サーバを起動
-npm run build         # dist/ に本番ビルド（Service Worker とマニフェストを含む）
-npm run preview       # ビルド結果を確認（PWA の動作確認はこちら）
-npm test              # Rust のユニットテスト + 幾何/wasm のテスト
-npm run lint          # Biome（TS/CSS）+ clippy（crate）
-npm run format        # Biome + rustfmt で書き換える
-npm run format:check  # 書き換えずに差分だけ見る（CI と同じ）
+npm run dev           # build wasm, then start the Vite dev server
+npm run build         # production build into dist/
+npm run preview       # serve the build (use this to check PWA behaviour)
+npm test              # Rust unit tests + the web tests
+npm run lint          # Biome (TS/CSS) + clippy (crate)
+npm run format        # Biome + rustfmt, writing changes
+npm run format:check  # the same check CI runs
 ```
 
-整形は Biome（`biome.json`）と rustfmt（`crate/rustfmt.toml`）が担当し、どちらも 110 桁です。
-密に書いてあるほうが読める箇所——絵文字パレットの並びや CSS のショートハンド——には
-`biome-ignore format` を付けてあるので、整形しても崩れません。
+`dist/` is static files, so any host will do; for a sub-path deploy, build with
+`AKA_BASE=/aka/ npm run build`. CI runs the same checks on every push and pull
+request, and publishes `main` to GitHub Pages.
 
-`dist/` は静的ファイルのみなので、任意のホスティングに置けます。
-サブパスに配置する場合は `AKA_BASE=/aka/ npm run build` のようにベースパスを指定してください。
+To add a language, drop a catalog into `src/locales/` and list it in `index.ts`.
+`en.ts` is the reference — every other catalog is typed as `Catalog`, so a
+missing or extra key is a compile error.
 
-インストールは、デスクトップ Chrome / Edge ならアドレスバーのインストールボタン、
-Android は「ホーム画面に追加」、iOS は Safari の共有メニューから「ホーム画面に追加」です。
+## Architecture
 
-## CI とデプロイ
+Vite, TypeScript and vite-plugin-pwa are the only dependencies: no UI framework,
+no canvas library, no i18n library. The build is about 25KB gzipped (8KB of that
+wasm), 105KB precached.
 
-`.github/workflows/ci.yml` が push と pull request の両方で走ります。ジョブは検査の種類ではなく
-ツールチェーンで分けてあり、Node だけで済む `web`（Biome の lint と整形）は `ubuntu-slim`、
-Rust を積む `crate`（rustfmt / clippy / cargo test）と `build`（wasm・型検査・web のテスト・
-本番ビルド）は通常のイメージです。wasm-bindgen の手続きマクロが host のリンカを要るためで、
-リンカの要らないジョブは slim に置いてあります。
+```
+crate/src/lib.rs   Rust: pixel effects (mosaic / blackout / transparent) → wasm
+src/types.ts       Document model, and the table of what is stylable per type
+src/geom.ts        Hit testing, bounds, handles, resize (DOM-free)
+src/render.ts      Drawing the document onto the 1:1 scene canvas
+src/editor.ts      State, history, pointer handling, viewport
+src/ui.ts          Toolbar and the contextual options bar
+src/main.ts        Boot, file in/out, shortcuts, service worker
+src/draft.ts       Reading and writing drafts
+src/filename.ts    Turning a document name into a file name safely
+src/png.ts         PNG container: signature, chunks, CRC
+src/brand.ts       Colours and icon specs, shared with the build
+src/i18n.ts        Locale detection, persistence and application
+src/locales/       The catalogs (DOM-free; the build and tests read them too)
+scripts/make-icons.mjs  Generates the PWA icons from geometry
+```
 
-`main` への push で 4 つのジョブが揃って通ると、`build` が上げた `dist/` を `deploy` が
-GitHub Pages に公開します（https://jmatsu.github.io/aka/）。ベースパスはリポジトリ名から
-組み立てているので、`AKA_BASE` を CI 側で書き換える必要はありません。
+Only `apply_region` is in wasm — redactions reprocess the pixels under them on
+every frame of a drag, and nothing else here is expensive. Rendering stays on
+Canvas 2D, which is what lets a real `<textarea>` sit over the canvas for IME
+input. The scene canvas is kept separate from the visible one because
+`getImageData` ignores transforms, so redactions need a canvas at document scale
+to be correct at any zoom; selection handles are drawn only on the visible one
+and so never reach an export.
 
-**初回だけ手作業が要ります。** リポジトリの Settings → Pages で Source を
-「GitHub Actions」にしてください。`GITHUB_TOKEN` では Pages を有効化できないため、
-ワークフローからは行えません。
-
-## ライセンス
+## License
 
 MIT
