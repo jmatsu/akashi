@@ -168,17 +168,40 @@ npm install
 ## 開発・ビルド・テスト
 
 ```sh
-npm run dev      # wasm をビルドして Vite の開発サーバを起動
-npm run build    # dist/ に本番ビルド（Service Worker とマニフェストを含む）
-npm run preview  # ビルド結果を確認（PWA の動作確認はこちら）
-npm test         # Rust のユニットテスト + 幾何/wasm のテスト
+npm run dev           # wasm をビルドして Vite の開発サーバを起動
+npm run build         # dist/ に本番ビルド（Service Worker とマニフェストを含む）
+npm run preview       # ビルド結果を確認（PWA の動作確認はこちら）
+npm test              # Rust のユニットテスト + 幾何/wasm のテスト
+npm run lint          # Biome（TS/CSS）+ clippy（crate）
+npm run format        # Biome + rustfmt で書き換える
+npm run format:check  # 書き換えずに差分だけ見る（CI と同じ）
 ```
+
+整形は Biome（`biome.json`）と rustfmt（`crate/rustfmt.toml`）が担当し、どちらも 110 桁です。
+密に書いてあるほうが読める箇所——絵文字パレットの並びや CSS のショートハンド——には
+`biome-ignore format` を付けてあるので、整形しても崩れません。
 
 `dist/` は静的ファイルのみなので、任意のホスティングに置けます。
 サブパスに配置する場合は `AKA_BASE=/aka/ npm run build` のようにベースパスを指定してください。
 
 インストールは、デスクトップ Chrome / Edge ならアドレスバーのインストールボタン、
 Android は「ホーム画面に追加」、iOS は Safari の共有メニューから「ホーム画面に追加」です。
+
+## CI とデプロイ
+
+`.github/workflows/ci.yml` が push と pull request の両方で走ります。ジョブは検査の種類ではなく
+ツールチェーンで分けてあり、Node だけで済む `web`（Biome の lint と整形）は `ubuntu-slim`、
+Rust を積む `crate`（rustfmt / clippy / cargo test）と `build`（wasm・型検査・web のテスト・
+本番ビルド）は通常のイメージです。wasm-bindgen の手続きマクロが host のリンカを要るためで、
+リンカの要らないジョブは slim に置いてあります。
+
+`main` への push で 4 つのジョブが揃って通ると、`build` が上げた `dist/` を `deploy` が
+GitHub Pages に公開します（https://jmatsu.github.io/aka/）。ベースパスはリポジトリ名から
+組み立てているので、`AKA_BASE` を CI 側で書き換える必要はありません。
+
+**初回だけ手作業が要ります。** リポジトリの Settings → Pages で Source を
+「GitHub Actions」にしてください。`GITHUB_TOKEN` では Pages を有効化できないため、
+ワークフローからは行えません。
 
 ## ライセンス
 
