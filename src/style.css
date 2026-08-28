@@ -124,6 +124,22 @@ button {
   font-weight: 600;
 }
 
+/* The language picker sits with the actions and matches their chrome. */
+#lang {
+  min-height: 32px;
+  padding: 0 6px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--panel-hi);
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+}
+
+#lang:hover {
+  border-color: var(--muted);
+}
+
 .sep {
   width: 1px;
   height: 20px;
