@@ -25,7 +25,7 @@ export const en = {
 
   // --- header -----------------------------------------------------------
   'action.open': 'Open image',
-  'action.blank': 'Blank',
+  'action.blank': 'New',
   'action.undo': 'Undo',
   'action.redo': 'Redo',
   'action.clear': 'Clear all',
