@@ -49,6 +49,12 @@ export class Editor {
   private readonly sceneCtx: CanvasRenderingContext2D
   private readonly viewCtx: CanvasRenderingContext2D
   private image: CanvasImageSource | null = null
+  /**
+   * The bytes `image` was decoded from, kept so a draft can carry the original
+   * screenshot rather than a re-encode of the annotated one. Held only while a
+   * document is open, and never sent anywhere on its own.
+   */
+  private imageSource: Blob | null = null
 
   /** Text metrics for `geom`, which is otherwise free of the DOM. */
   private readonly measure: Measure = (lines, size) => {
@@ -114,19 +120,44 @@ export class Editor {
   /** Replace the document with a blank canvas. */
   newDoc(width = BLANK_DOC.width, height = BLANK_DOC.height, background: string | null = BLANK_DOC.background): void {
     this.image = null
+    this.imageSource = null
     this.doc = { width, height, background, objects: [] }
     this.afterDocReplaced()
   }
 
   /** Replace the document with an image, sized to it. */
-  setImage(image: HTMLImageElement | ImageBitmap, width: number, height: number): void {
+  setImage(image: HTMLImageElement | ImageBitmap, width: number, height: number, source: Blob): void {
     this.image = image
+    this.imageSource = source
     this.doc = { width, height, background: null, objects: [] }
+    this.afterDocReplaced()
+  }
+
+  /**
+   * Reopen a document that was drawn somewhere else -- the far side of a draft
+   * handed over between devices. `image` is null for one started from the blank
+   * canvas; the bitmap and the bytes it was decoded from travel together,
+   * because a document with one and not the other cannot be handed on again.
+   *
+   * Ids are reissued here. They come from a counter, so two devices that both
+   * started at zero would otherwise hand back colliding ids the moment anything
+   * new is drawn on top -- and this is also where a draft carrying duplicate
+   * ids of its own gets normalised, import being where untrusted data lands.
+   */
+  restoreDraft(doc: Doc, image: { bitmap: ImageBitmap; source: Blob } | null): void {
+    this.image = image?.bitmap ?? null
+    this.imageSource = image?.source ?? null
+    this.doc = { ...doc, objects: doc.objects.map((o) => ({ ...o, id: newId() })) }
     this.afterDocReplaced()
   }
 
   hasImage(): boolean {
     return this.image !== null
+  }
+
+  /** The bytes the open image was decoded from, for a draft to carry along. */
+  sourceImage(): Blob | null {
+    return this.imageSource
   }
 
   private afterDocReplaced(): void {

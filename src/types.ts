@@ -94,6 +94,19 @@ export type Obj = TextObj | ShapeObj | ArrowObj | MarkerObj | EmojiObj | RegionO
 
 export type ObjType = Obj['type']
 
+/**
+ * The object type behind a tag. `Extract<Obj, { type: K }>` looks like it does
+ * this and does not: `ShapeObj` is tagged `'rect' | 'ellipse'`, so extracting
+ * either one asks for a member whose tag is exactly that and finds none. This
+ * distributes over the union and keeps `ShapeObj` for both of its tags, which
+ * is what makes a per-type table checkable field by field.
+ */
+export type ObjOf<K extends ObjType, O = Obj> = O extends { type: infer T }
+  ? K extends T
+    ? O
+    : never
+  : never
+
 /** Object types that are edited through an axis-aligned bounding box. */
 export type BoxObj = ShapeObj | RegionObj
 
@@ -171,7 +184,7 @@ export const DEFAULT_SETTINGS: Settings = {
 type StyleField<T extends Obj> = readonly [Exclude<keyof T, 'id' | 'type'>, keyof Settings]
 
 export const STYLE_FIELDS: {
-  readonly [K in ObjType]: readonly StyleField<Extract<Obj, { type: K }>>[]
+  readonly [K in ObjType]: readonly StyleField<ObjOf<K>>[]
 } = {
   text: [
     ['color', 'color'],
