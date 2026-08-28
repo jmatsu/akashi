@@ -37,6 +37,8 @@ export const en = {
   'action.copyTitle': 'Copy to clipboard',
   'action.save': 'Save',
   'action.saveTitle': 'Save as PNG',
+  'action.draft': 'Draft',
+  'action.draftTitle': 'Hand this session to another device',
   'action.delete': 'Delete',
   'language.label': 'Language',
 
@@ -85,6 +87,8 @@ export const en = {
   'toast.saved': 'Saved as PNG',
   'toast.copied': 'Copied to the clipboard',
   'toast.copyUnsupported': 'This browser cannot copy images; use Save instead',
+  'toast.draftLoaded': 'Draft opened, with {count} annotations',
+  'toast.draftSaved': 'Draft saved. Open it on the other device to carry on',
 }
 
 export type MessageKey = keyof typeof en

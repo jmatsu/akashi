@@ -1,3 +1,4 @@
+import { decodeDraft, encodeDraft } from './draft'
 import { Editor } from './editor'
 import { LOCALES, initI18n, isLocale, locale, localeName, setLocale, t } from './i18n'
 import { buildUI, TOOLS } from './ui'
@@ -57,6 +58,7 @@ function wireHeader(editor: Editor): void {
     zoomout: () => editor.zoomBy(1 / 1.25),
     fit: () => editor.zoomToFit(),
     copy: () => void copyPng(editor),
+    draft: () => void shareDraft(editor),
     save: () => void savePng(editor),
   }
 
@@ -67,7 +69,7 @@ function wireHeader(editor: Editor): void {
 
   file.addEventListener('change', () => {
     const chosen = file.files?.[0]
-    if (chosen) void loadImage(editor, chosen)
+    if (chosen) void openFile(editor, chosen)
     // Reset so picking the same file twice still fires `change`.
     file.value = ''
   })
@@ -105,34 +107,90 @@ function wireLanguage(): void {
 
 // --- image in / out ----------------------------------------------------
 
-async function loadImage(editor: Editor, source: Blob): Promise<void> {
+/**
+ * Open whatever the user handed us: a file, a drop, a paste.
+ *
+ * A draft carries its session inside the PNG (see `draft.ts`), so this is also
+ * the door a draft from another device comes in through -- paste and drag-drop
+ * included, with no separate import step. Anything without a session in it is an
+ * ordinary image, which is the common case and stays untouched.
+ */
+async function openFile(editor: Editor, source: Blob): Promise<void> {
   try {
+    const draft = decodeDraft(new Uint8Array(await source.arrayBuffer()))
+    if (draft !== null) {
+      const image = draft.image === null ? null : new Blob([draft.image.bytes], { type: draft.image.mime })
+      editor.restoreDraft(draft.doc, image === null ? null : await createImageBitmap(image), image)
+      toast(t('toast.draftLoaded', { count: draft.doc.objects.length }))
+      return
+    }
     const bitmap = await createImageBitmap(source)
-    editor.setImage(bitmap, bitmap.width, bitmap.height)
+    // The blob is kept so a draft made from this image can carry the original
+    // pixels rather than a re-encode of the annotated ones.
+    editor.setImage(bitmap, bitmap.width, bitmap.height, source)
     toast(t('toast.imageLoaded', { width: bitmap.width, height: bitmap.height }))
   } catch {
     toast(t('toast.imageFailed'))
   }
 }
 
-function fileName(): string {
+function fileName(prefix: string): string {
   const now = new Date()
   const pad = (n: number): string => String(n).padStart(2, '0')
-  return `aka-${now.getFullYear()}${pad(now.getMonth() + 1)}${pad(now.getDate())}-${pad(now.getHours())}${pad(now.getMinutes())}${pad(now.getSeconds())}.png`
+  return `${prefix}-${now.getFullYear()}${pad(now.getMonth() + 1)}${pad(now.getDate())}-${pad(now.getHours())}${pad(now.getMinutes())}${pad(now.getSeconds())}.png`
 }
 
-/** Save the document as a PNG file. Copy to the clipboard is the other half. */
-async function savePng(editor: Editor): Promise<void> {
-  const blob = await editor.toBlob()
+/** Save a blob to the user's disk under `name`. */
+function download(blob: Blob, name: string): void {
   const url = URL.createObjectURL(blob)
   const a = document.createElement('a')
   a.href = url
-  a.download = fileName()
+  a.download = name
   a.click()
   // Revoking straight after `click()` can cut the download off before the
   // browser has read the blob; one task later is safely past that.
   setTimeout(() => URL.revokeObjectURL(url), 0)
+}
+
+/** Save the document as a PNG file. Copy to the clipboard is the other half. */
+async function savePng(editor: Editor): Promise<void> {
+  download(await editor.toBlob(), fileName('aka'))
   toast(t('toast.saved'))
+}
+
+/**
+ * Hand the whole editing session to another device.
+ *
+ * The file is a normal PNG of the annotated image with the session inside it, so
+ * it travels over whatever the two devices already share -- AirDrop, Quick
+ * Share, a cable, a folder. That is the point: the screenshot goes device to
+ * device and never to a server, because aka has none. The share sheet is used
+ * where the browser has one, and a plain download is the fallback everywhere
+ * else.
+ */
+async function shareDraft(editor: Editor): Promise<void> {
+  const flat = new Uint8Array(await (await editor.toBlob()).arrayBuffer())
+  const source = editor.sourceImage()
+  const image =
+    source === null
+      ? null
+      : { mime: source.type || 'image/png', bytes: new Uint8Array(await source.arrayBuffer()) }
+  const file = new File([encodeDraft(flat, { doc: editor.doc, image })], fileName('aka-draft'), {
+    type: 'image/png',
+  })
+
+  if (navigator.canShare?.({ files: [file] })) {
+    try {
+      await navigator.share({ files: [file], title: file.name })
+      return
+    } catch (e) {
+      // Dismissing the sheet is a cancel, not a failure. Anything else falls
+      // through to the download, so a draft is never left with no way out.
+      if (e instanceof DOMException && e.name === 'AbortError') return
+    }
+  }
+  download(file, file.name)
+  toast(t('toast.draftSaved'))
 }
 
 async function copyPng(editor: Editor): Promise<void> {
@@ -153,7 +211,7 @@ function wireInput(editor: Editor): void {
     const blob = item?.getAsFile()
     if (!blob) return
     e.preventDefault()
-    if (confirmDiscard(editor)) void loadImage(editor, blob)
+    if (confirmDiscard(editor)) void openFile(editor, blob)
   })
 
   const stage = must<HTMLElement>('#stage')
@@ -166,7 +224,7 @@ function wireInput(editor: Editor): void {
     e.preventDefault()
     stage.classList.remove('dropping')
     const blob = e.dataTransfer?.files?.[0]
-    if (blob?.type.startsWith('image/') && confirmDiscard(editor)) void loadImage(editor, blob)
+    if (blob?.type.startsWith('image/') && confirmDiscard(editor)) void openFile(editor, blob)
   })
 
   // Double-click reopens the inline editor on an existing text object.
@@ -186,7 +244,7 @@ function wireKeyboard(editor: Editor): void {
   const withModifier: Record<string, (e: KeyboardEvent) => void> = {
     z: (e) => (e.shiftKey ? editor.redo() : editor.undo()),
     y: () => editor.redo(),
-    s: () => void savePng(editor),
+    s: (e) => void (e.shiftKey ? shareDraft(editor) : savePng(editor)),
     '0': () => editor.zoomToFit(),
     '1': () => editor.zoomTo(1),
   }

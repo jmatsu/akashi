@@ -28,6 +28,8 @@ export const ja: Catalog = {
   'action.copyTitle': 'クリップボードへコピー',
   'action.save': '保存',
   'action.saveTitle': 'PNG で保存',
+  'action.draft': '下書き',
+  'action.draftTitle': '編集中のまま別の端末へ渡す',
   'action.delete': '削除',
   'language.label': '言語',
 
@@ -77,4 +79,6 @@ export const ja: Catalog = {
   'toast.saved': 'PNG を保存しました',
   'toast.copied': 'クリップボードにコピーしました',
   'toast.copyUnsupported': 'このブラウザではコピーできません。PNG 保存を使ってください',
+  'toast.draftLoaded': '下書きを開きました（注釈 {count} 個）',
+  'toast.draftSaved': '下書きを保存しました。別の端末で開くと続きから編集できます',
 }
