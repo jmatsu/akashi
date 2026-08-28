@@ -1,4 +1,4 @@
-import { PROBE_BYTES, decodeDraft, encodeDraft, mayCarryDraft } from './draft'
+import { DRAFT_EXT, PROBE_BYTES, decodeDraft, encodeDraft, mayCarryDraft } from './draft'
 import { Editor } from './editor'
 import { LOCALES, initI18n, isLocale, locale, localeName, setLocale, t } from './i18n'
 import { buildUI, TOOLS } from './ui'
@@ -158,10 +158,10 @@ async function openDraft(editor: Editor, source: Blob): Promise<boolean> {
   }
 }
 
-function fileName(prefix: string): string {
+function fileName(prefix: string, ext: string): string {
   const now = new Date()
   const pad = (n: number): string => String(n).padStart(2, '0')
-  return `${prefix}-${now.getFullYear()}${pad(now.getMonth() + 1)}${pad(now.getDate())}-${pad(now.getHours())}${pad(now.getMinutes())}${pad(now.getSeconds())}.png`
+  return `${prefix}-${now.getFullYear()}${pad(now.getMonth() + 1)}${pad(now.getDate())}-${pad(now.getHours())}${pad(now.getMinutes())}${pad(now.getSeconds())}.${ext}`
 }
 
 /** Save a blob to the user's disk under `name`. */
@@ -178,14 +178,20 @@ function download(blob: Blob, name: string): void {
 
 /** Save the document as a PNG file. Copy to the clipboard is the other half. */
 async function savePng(editor: Editor): Promise<void> {
-  download(await editor.toBlob(), fileName('aka'))
+  download(await editor.toBlob(), fileName('aka', 'png'))
   toast(t('toast.saved'))
 }
 
 /**
  * Hand the whole editing session to another device, as a PNG that carries it
- * (see `draft.ts`). The share sheet is used where the browser has one, and a
- * plain download is the fallback everywhere else.
+ * under aka's own extension (see `draft.ts`). The share sheet is used where the
+ * browser has one, and a plain download is the fallback everywhere else.
+ *
+ * That fallback is the usual path on Chrome, not a rare one: it shares only
+ * files whose extension is on a permitted list, and `.aka` is not on it, so
+ * `canShare` says no and the draft goes to the downloads folder for the user to
+ * pass on themselves. Worth the step -- the name is what keeps a file holding
+ * the unredacted original from being mistaken for the flattened export.
  */
 async function shareDraft(editor: Editor): Promise<void> {
   const source = editor.sourceImage()
@@ -201,7 +207,9 @@ async function shareDraft(editor: Editor): Promise<void> {
       ? null
       : { mime: source.type || 'image/png', bytes: new Uint8Array(bytes) }
   const parts = encodeDraft(new Uint8Array(flat), { doc: editor.doc, image })
-  const file = new File(parts, fileName('aka-draft'), { type: 'image/png' })
+  // The bytes really are a PNG, and saying so is what lets a receiving app
+  // preview or open the draft at all; only the name sets it apart.
+  const file = new File(parts, fileName('aka-draft', DRAFT_EXT), { type: 'image/png' })
 
   if (navigator.canShare?.({ files: [file] })) {
     try {

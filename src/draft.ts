@@ -1,13 +1,23 @@
 /**
- * The draft container: a real PNG that also carries the editable session.
+ * The draft container: a real PNG, handed out under a name of aka's own.
  *
  * A draft has to cross between devices without a server, so the transport is
  * whatever the operating system already offers -- AirDrop, Quick Share, a cable,
- * a shared folder. Those all move *files*, and the one file type they all accept
- * and preview is an image. So a draft is exactly the PNG `保存` produces, with
- * the session tucked into a private PNG chunk beside the pixels: anything that
- * opens it shows the annotated screenshot, and aka reopens it as an editable
- * document.
+ * a shared folder. Those all move *files*, and a PNG is the one payload they
+ * carry as-is. So a draft is exactly the PNG `保存` produces, with the session
+ * tucked into a private PNG chunk beside the pixels.
+ *
+ * It goes out as `.aka` rather than `.png` all the same, because the two files
+ * are not interchangeable: a draft carries the *original* image, so passing one
+ * on undoes every redaction drawn over it -- and under a `.png` name it is
+ * indistinguishable from the flattened export that should have been sent
+ * instead. The extension keeps a draft out of the places an image is shared by
+ * reflex (a chat app shows a file, not a preview), and off the path that would
+ * corrupt it anyway: on iOS it lands in Files rather than Photos, which
+ * re-encodes and drops the chunk.
+ *
+ * Nothing is read back by name, though -- `mayCarryDraft` looks at the bytes --
+ * so a draft that arrives renamed still opens as one.
  *
  * Nothing here touches the DOM, so the format is exercised by the tests directly.
  */
@@ -26,6 +36,9 @@ import type { ArrowStyle, Doc, Obj, ObjOf, ObjType, Pt, RegionMode } from './typ
  * to drop it rather than carry a draft that no longer matches what it shows.
  */
 export const DRAFT_CHUNK = 'akDF'
+
+/** The extension a draft is written under, without the dot. See the note above. */
+export const DRAFT_EXT = 'aka'
 
 /** Bumped only for a change the current reader cannot make sense of. */
 const DRAFT_VERSION = 1
