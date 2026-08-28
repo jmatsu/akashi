@@ -50,7 +50,7 @@ test('locale and message keys are recognised, and nothing else is', () => {
 })
 
 test('every key the markup asks for exists', () => {
-  const keys = [...html.matchAll(/data-i18n(?:-html|-title|-label|-content)?="([^"]+)"/g)].map(
+  const keys = [...html.matchAll(/data-i18n(?:-html|-title|-label|-placeholder|-content)?="([^"]+)"/g)].map(
     (m) => m[1],
   )
   assert.ok(keys.length > 0, 'the markup declares no keys at all')
@@ -78,6 +78,11 @@ test('the literals in index.html match the default catalog', () => {
     expect(key as MessageKey, literal)
   }
   for (const [, key, literal] of html.matchAll(/data-i18n-label="([^"]+)"[^>]*aria-label="([^"]*)"/g)) {
+    expect(key as MessageKey, literal)
+  }
+  for (const [, key, literal] of html.matchAll(
+    /data-i18n-placeholder="([^"]+)"[^>]*placeholder="([^"]*)"/g,
+  )) {
     expect(key as MessageKey, literal)
   }
 })

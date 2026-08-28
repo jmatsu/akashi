@@ -5,3 +5,8 @@ crate/target/
 src/wasm/
 *.log
 .DS_Store
+
+# graft: the checkouts and logs a graft leaves behind, and your own configuration
+/.graft/worktrees/
+/.graft/logs/
+/.graft.local.*

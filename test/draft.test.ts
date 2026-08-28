@@ -59,7 +59,7 @@ const rect: ShapeObj = {
   lockAspect: false,
 }
 
-const doc: Doc = { width: 800, height: 600, background: null, objects: [arrow, rect] }
+const doc: Doc = { width: 800, height: 600, background: null, name: 'bug-repro', objects: [arrow, rect] }
 
 const screenshot = new Uint8Array([9, 8, 7, 6, 5, 4, 3, 2, 1])
 
@@ -113,7 +113,7 @@ test('the draft chunk goes right after IHDR', () => {
 })
 
 test('a draft with no image round trips as a blank-canvas document', () => {
-  const blank: Doc = { width: 1280, height: 720, background: '#ffffff', objects: [] }
+  const blank: Doc = { width: 1280, height: 720, background: '#ffffff', name: null, objects: [] }
   const decoded = decodeDraft(carry(fakePng(), { doc: blank, image: null }))
   assert.ok(decoded)
   assert.deepEqual(decoded.doc, blank)
@@ -164,6 +164,15 @@ test('a document with a broken size is refused outright', () => {
   assert.equal(sanitizeDoc({ width: 800, height: 600, background: 7, objects: [] }), null)
   assert.equal(sanitizeDoc({ width: 800, height: 600, background: null }), null)
   assert.equal(sanitizeDoc(null), null)
+})
+
+test("a draft's name arrives as a name, never a path", () => {
+  const named = (name: unknown): string | null =>
+    sanitizeDoc({ width: 800, height: 600, background: null, name, objects: [] })?.name ?? null
+  assert.equal(named('bug-repro'), 'bug-repro')
+  assert.equal(named('../../.ssh/authorized_keys'), 'ssh authorized_keys')
+  assert.equal(named(42), null)
+  assert.equal(named(undefined), null)
 })
 
 test('a bad object is dropped and the rest of the document is kept', () => {

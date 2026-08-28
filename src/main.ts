@@ -1,5 +1,6 @@
-import { PROBE_BYTES, decodeDraft, encodeDraft, mayCarryDraft } from './draft'
+import { DRAFT_EXT, PROBE_BYTES, decodeDraft, encodeDraft, mayCarryDraft } from './draft'
 import { Editor } from './editor'
+import { baseName, fileName } from './filename'
 import { LOCALES, initI18n, isLocale, locale, localeName, setLocale, t } from './i18n'
 import { buildUI, TOOLS } from './ui'
 import { initWasm } from './wasm'
@@ -41,6 +42,7 @@ function must<T extends Element>(selector: string): T {
 
 function wireHeader(editor: Editor): void {
   const file = must<HTMLInputElement>('#file')
+  const name = must<HTMLInputElement>('#name')
   const zoomLabel = must<HTMLElement>('#zoom-label')
   const undo = must<HTMLButtonElement>('[data-act="undo"]')
   const redo = must<HTMLButtonElement>('[data-act="redo"]')
@@ -67,6 +69,13 @@ function wireHeader(editor: Editor): void {
     if (act) button.addEventListener('click', act)
   }
 
+  name.addEventListener('input', () => editor.setName(name.value))
+  // Enter has nothing to submit; taking the focus back is what the user means
+  // by it, and it puts the tool shortcuts back within reach.
+  name.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') name.blur()
+  })
+
   file.addEventListener('change', () => {
     const chosen = file.files?.[0]
     if (chosen) void openFile(editor, chosen)
@@ -75,6 +84,9 @@ function wireHeader(editor: Editor): void {
   })
 
   editor.onChange(() => {
+    // Opening a document renames the field under the user; typing in it must
+    // not rewrite what they are in the middle of.
+    if (document.activeElement !== name) name.value = editor.doc.name ?? ''
     zoomLabel.textContent = `${Math.round(editor.zoom * 100)}%`
     undo.disabled = !editor.canUndo
     redo.disabled = !editor.canRedo
@@ -124,7 +136,7 @@ async function openFile(editor: Editor, source: Blob): Promise<void> {
     const bitmap = await createImageBitmap(source)
     // The blob is kept so a draft made from this image can carry the original
     // pixels rather than a re-encode of the annotated ones.
-    editor.setImage(bitmap, bitmap.width, bitmap.height, source)
+    editor.setImage(bitmap, bitmap.width, bitmap.height, source, sourceName(source))
     toast(t('toast.imageLoaded', { width: bitmap.width, height: bitmap.height }))
   } catch {
     toast(t('toast.imageFailed'))
@@ -158,10 +170,13 @@ async function openDraft(editor: Editor, source: Blob): Promise<boolean> {
   }
 }
 
-function fileName(prefix: string): string {
-  const now = new Date()
-  const pad = (n: number): string => String(n).padStart(2, '0')
-  return `${prefix}-${now.getFullYear()}${pad(now.getMonth() + 1)}${pad(now.getDate())}-${pad(now.getHours())}${pad(now.getMinutes())}${pad(now.getSeconds())}.png`
+/**
+ * What the image was called where it came from, so saving the annotated version
+ * lands next to it under the same name rather than a timestamp. A pasted or
+ * dropped-in blob is not a `File` and has nothing to take.
+ */
+function sourceName(source: Blob): string | null {
+  return source instanceof File ? baseName(source.name) : null
 }
 
 /** Save a blob to the user's disk under `name`. */
@@ -178,14 +193,20 @@ function download(blob: Blob, name: string): void {
 
 /** Save the document as a PNG file. Copy to the clipboard is the other half. */
 async function savePng(editor: Editor): Promise<void> {
-  download(await editor.toBlob(), fileName('aka'))
+  download(await editor.toBlob(), fileName(editor.doc.name, 'aka', 'png'))
   toast(t('toast.saved'))
 }
 
 /**
  * Hand the whole editing session to another device, as a PNG that carries it
- * (see `draft.ts`). The share sheet is used where the browser has one, and a
- * plain download is the fallback everywhere else.
+ * under aka's own extension (see `draft.ts`). The share sheet is used where the
+ * browser has one, and a plain download is the fallback everywhere else.
+ *
+ * That fallback is the usual path on Chrome, not a rare one: it shares only
+ * files whose extension is on a permitted list, and `.aka` is not on it, so
+ * `canShare` says no and the draft goes to the downloads folder for the user to
+ * pass on themselves. Worth the step -- the name is what keeps a file holding
+ * the unredacted original from being mistaken for the flattened export.
  */
 async function shareDraft(editor: Editor): Promise<void> {
   const source = editor.sourceImage()
@@ -201,7 +222,9 @@ async function shareDraft(editor: Editor): Promise<void> {
       ? null
       : { mime: source.type || 'image/png', bytes: new Uint8Array(bytes) }
   const parts = encodeDraft(new Uint8Array(flat), { doc: editor.doc, image })
-  const file = new File(parts, fileName('aka-draft'), { type: 'image/png' })
+  // The bytes really are a PNG, and saying so is what lets a receiving app
+  // preview or open the draft at all; only the name sets it apart.
+  const file = new File(parts, fileName(editor.doc.name, 'aka-draft', DRAFT_EXT), { type: 'image/png' })
 
   if (navigator.canShare?.({ files: [file] })) {
     try {
@@ -274,17 +297,25 @@ function wireKeyboard(editor: Editor): void {
   }
 
   window.addEventListener('keydown', (e) => {
-    // A focused slider, colour well or the inline text editor owns its own
-    // keys. (The textarea also stops propagation, so it never reaches here.)
-    if (e.target instanceof HTMLElement && e.target.matches('input, textarea, select')) return
+    // A focused slider, colour well, name field or the inline text editor owns
+    // its own keys. (The textarea also stops propagation, so it never reaches
+    // here.)
+    const inField = e.target instanceof HTMLElement && e.target.matches('input, textarea, select')
 
     if (e.metaKey || e.ctrlKey) {
-      const action = withModifier[e.key.toLowerCase()]
+      const key = e.key.toLowerCase()
+      // Saving is the one shortcut a focused field does not swallow: typing a
+      // name and pressing Ctrl/Cmd+S is a single gesture. The rest stay the
+      // field's own -- Ctrl/Cmd+Z there means the text, not the drawing.
+      if (inField && key !== 's') return
+      const action = withModifier[key]
       if (!action) return
       e.preventDefault()
       action(e)
       return
     }
+
+    if (inField) return
 
     if (e.key === 'Delete' || e.key === 'Backspace') {
       e.preventDefault()

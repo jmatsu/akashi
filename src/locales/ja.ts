@@ -16,7 +16,7 @@ export const ja: Catalog = {
 
   // --- header -----------------------------------------------------------
   'action.open': '画像を開く',
-  'action.blank': '白紙',
+  'action.blank': '新規',
   'action.undo': '元に戻す',
   'action.redo': 'やり直す',
   'action.clear': '全消去',
@@ -28,9 +28,11 @@ export const ja: Catalog = {
   'action.copyTitle': 'クリップボードへコピー',
   'action.save': '保存',
   'action.saveTitle': 'PNG で保存',
-  'action.draft': '下書き',
-  'action.draftTitle': '編集中のまま別の端末へ渡す',
+  'action.draft': '下書き出力',
+  'action.draftTitle': '別の端末に引き継ぐ',
   'action.delete': '削除',
+  'name.label': '保存するファイルの名前',
+  'name.placeholder': 'aka-<日時>',
   'language.label': '言語',
 
   // --- app regions ------------------------------------------------------
@@ -62,7 +64,7 @@ export const ja: Catalog = {
   'option.emojiSize': '大きさ',
   'option.arrowStyle': '種類',
   'option.regionMode': '加工',
-  'option.regionStrength': '強さ',
+  'option.regionStrength': '強弱',
   'arrow.line': '線',
   'arrow.solid': '実線',
   'arrow.double': '両端',
