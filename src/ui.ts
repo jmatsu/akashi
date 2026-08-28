@@ -1,26 +1,28 @@
 import type { Editor } from './editor'
 import { EMOJI } from './emoji'
+import { onLocaleChange, t } from './i18n'
+import type { MessageKey } from './i18n'
 import { PALETTE, STYLE_FIELDS } from './types'
 import type { ArrowStyle, ObjType, RegionMode, Settings, ToolId } from './types'
 
 interface ToolSpec {
   id: ToolId
-  label: string
+  label: MessageKey
   key: string
   icon: string
 }
 
 /** `key` doubles as the keyboard shortcut and is shown in the tooltip. */
 export const TOOLS: readonly ToolSpec[] = [
-  { id: 'select', label: '選択', key: 'v', icon: svg('<path d="M5 3l14 8.5-6.2 1.4L9.6 19z"/>') },
-  { id: 'text', label: 'テキスト', key: 't', icon: svg('<path d="M5 5h14M12 5v14M9 19h6" fill="none" stroke="currentColor" stroke-width="2"/>') },
-  { id: 'rect', label: '四角', key: 'r', icon: svg('<rect x="4" y="6" width="16" height="12" rx="1" fill="none" stroke="currentColor" stroke-width="2"/>') },
-  { id: 'circle', label: '正円', key: 'o', icon: svg('<circle cx="12" cy="12" r="7" fill="none" stroke="currentColor" stroke-width="2"/>') },
-  { id: 'ellipse', label: '楕円', key: 'e', icon: svg('<ellipse cx="12" cy="12" rx="9" ry="6" fill="none" stroke="currentColor" stroke-width="2"/>') },
-  { id: 'arrow', label: '矢印', key: 'a', icon: svg('<path d="M5 19L19 5M11 5h8v8" fill="none" stroke="currentColor" stroke-width="2"/>') },
-  { id: 'marker', label: 'マーカー', key: 'm', icon: svg('<path d="M4 20l3-1 10-10-2-2L5 17z" fill="none" stroke="currentColor" stroke-width="2"/><path d="M15 5l2-2 4 4-2 2z"/>') },
-  { id: 'emoji', label: 'スタンプ', key: 's', icon: '<span class="emoji-icon">😀</span>' },
-  { id: 'region', label: '範囲加工', key: 'g', icon: svg('<rect x="4" y="6" width="16" height="12" rx="1" fill="none" stroke="currentColor" stroke-width="2" stroke-dasharray="3 2"/><path d="M7 9h3v3H7zM14 12h3v3h-3z"/>') },
+  { id: 'select', label: 'tool.select', key: 'v', icon: svg('<path d="M5 3l14 8.5-6.2 1.4L9.6 19z"/>') },
+  { id: 'text', label: 'tool.text', key: 't', icon: svg('<path d="M5 5h14M12 5v14M9 19h6" fill="none" stroke="currentColor" stroke-width="2"/>') },
+  { id: 'rect', label: 'tool.rect', key: 'r', icon: svg('<rect x="4" y="6" width="16" height="12" rx="1" fill="none" stroke="currentColor" stroke-width="2"/>') },
+  { id: 'circle', label: 'tool.circle', key: 'o', icon: svg('<circle cx="12" cy="12" r="7" fill="none" stroke="currentColor" stroke-width="2"/>') },
+  { id: 'ellipse', label: 'tool.ellipse', key: 'e', icon: svg('<ellipse cx="12" cy="12" rx="9" ry="6" fill="none" stroke="currentColor" stroke-width="2"/>') },
+  { id: 'arrow', label: 'tool.arrow', key: 'a', icon: svg('<path d="M5 19L19 5M11 5h8v8" fill="none" stroke="currentColor" stroke-width="2"/>') },
+  { id: 'marker', label: 'tool.marker', key: 'm', icon: svg('<path d="M4 20l3-1 10-10-2-2L5 17z" fill="none" stroke="currentColor" stroke-width="2"/><path d="M15 5l2-2 4 4-2 2z"/>') },
+  { id: 'emoji', label: 'tool.emoji', key: 's', icon: '<span class="emoji-icon">😀</span>' },
+  { id: 'region', label: 'tool.region', key: 'g', icon: svg('<rect x="4" y="6" width="16" height="12" rx="1" fill="none" stroke="currentColor" stroke-width="2" stroke-dasharray="3 2"/><path d="M7 9h3v3H7zM14 12h3v3h-3z"/>') },
 ]
 
 function svg(inner: string): string {
@@ -63,16 +65,16 @@ function groupsFor(context: Context): ReadonlySet<keyof Settings> {
   return keys
 }
 
-const ARROW_STYLES: { id: ArrowStyle; label: string; icon: string }[] = [
-  { id: 'line', label: '線', icon: svg('<path d="M3 12h16M13 7l6 5-6 5" fill="none" stroke="currentColor" stroke-width="2"/>') },
-  { id: 'solid', label: '実線', icon: svg('<path d="M3 12h11" stroke="currentColor" stroke-width="3"/><path d="M21 12l-9-5v10z"/>') },
-  { id: 'double', label: '両端', icon: svg('<path d="M7 12h10" stroke="currentColor" stroke-width="3"/><path d="M22 12l-8-4.5v9zM2 12l8-4.5v9z"/>') },
+const ARROW_STYLES: { id: ArrowStyle; label: MessageKey; icon: string }[] = [
+  { id: 'line', label: 'arrow.line', icon: svg('<path d="M3 12h16M13 7l6 5-6 5" fill="none" stroke="currentColor" stroke-width="2"/>') },
+  { id: 'solid', label: 'arrow.solid', icon: svg('<path d="M3 12h11" stroke="currentColor" stroke-width="3"/><path d="M21 12l-9-5v10z"/>') },
+  { id: 'double', label: 'arrow.double', icon: svg('<path d="M7 12h10" stroke="currentColor" stroke-width="3"/><path d="M22 12l-8-4.5v9zM2 12l8-4.5v9z"/>') },
 ]
 
-const REGION_MODES: { id: RegionMode; label: string }[] = [
-  { id: 'mosaic', label: 'モザイク' },
-  { id: 'blackout', label: '黒塗り' },
-  { id: 'transparent', label: '透明化' },
+const REGION_MODES: { id: RegionMode; label: MessageKey }[] = [
+  { id: 'mosaic', label: 'regionMode.mosaic' },
+  { id: 'blackout', label: 'regionMode.blackout' },
+  { id: 'transparent', label: 'regionMode.transparent' },
 ]
 
 interface Range {
@@ -98,8 +100,12 @@ interface Choice<T> {
   value: T
   cls: string
   html?: string
+  /** Translated label, re-read on every locale change. `html` is the literal
+   *  alternative, for swatches and emoji that say the same in any language. */
+  htmlKey?: MessageKey
   bg?: string
   title?: string
+  titleKey?: MessageKey
 }
 
 function el<K extends keyof HTMLElementTagNameMap>(tag: K, className?: string, html?: string): HTMLElementTagNameMap[K] {
@@ -115,33 +121,46 @@ function el<K extends keyof HTMLElementTagNameMap>(tag: K, className?: string, h
  * so dragging a slider is never interrupted by a re-render.
  */
 export function buildUI(editor: Editor, root: { tools: HTMLElement; options: HTMLElement }): void {
+  /** Everything that writes a translated string. Re-run on a locale change. */
+  const text: (() => void)[] = []
+
   const toolButtons = new Map<ToolId, HTMLButtonElement>()
-  for (const t of TOOLS) {
-    const b = el('button', 'tool', `${t.icon}<span class="tool-label">${t.label}</span>`)
+  for (const spec of TOOLS) {
+    const b = el('button', 'tool', `${spec.icon}<span class="tool-label"></span>`)
+    const label = b.querySelector('.tool-label') as HTMLElement
     b.type = 'button'
-    b.title = `${t.label} (${t.key.toUpperCase()})`
-    b.addEventListener('click', () => editor.setTool(t.id))
-    toolButtons.set(t.id, b)
+    b.addEventListener('click', () => editor.setTool(spec.id))
+    toolButtons.set(spec.id, b)
     root.tools.appendChild(b)
+    text.push(() => {
+      label.textContent = t(spec.label)
+      // The shortcut letter is the same in every language, so it is appended
+      // here rather than repeated in each catalog.
+      b.title = `${t(spec.label)} (${spec.key.toUpperCase()})`
+    })
   }
 
   const groups = new Map<keyof Settings, HTMLElement>()
   const sync: (() => void)[] = []
 
-  const group = (name: keyof Settings, label: string): HTMLElement => {
+  const group = (name: keyof Settings, label: MessageKey): HTMLElement => {
     const g = el('div', 'group')
-    g.appendChild(el('span', 'group-label', label))
+    const caption = el('span', 'group-label')
+    g.appendChild(caption)
     const body = el('div', 'group-body')
     g.appendChild(body)
     groups.set(name, g)
     root.options.appendChild(g)
+    text.push(() => {
+      caption.textContent = t(label)
+    })
     return body
   }
 
   /** A row of buttons of which exactly one carries `.on`. */
   const choice = <T,>(
     name: keyof Settings,
-    label: string,
+    label: MessageKey,
     items: readonly Choice<T>[],
     get: () => T,
     set: (value: T) => void,
@@ -154,6 +173,13 @@ export function buildUI(editor: Editor, root: { tools: HTMLElement; options: HTM
       b.type = 'button'
       if (item.bg) b.style.background = item.bg
       if (item.title) b.title = item.title
+      const { htmlKey, titleKey } = item
+      if (htmlKey || titleKey) {
+        text.push(() => {
+          if (htmlKey) b.textContent = t(htmlKey)
+          if (titleKey) b.title = t(titleKey)
+        })
+      }
       b.addEventListener('click', () => set(item.value))
       body.appendChild(b)
       return { item, b }
@@ -165,22 +191,25 @@ export function buildUI(editor: Editor, root: { tools: HTMLElement; options: HTM
     return body
   }
 
+  // A swatch is titled with its own hex, which reads the same in any language.
   const swatches = (): Choice<string>[] => PALETTE.map((c) => ({ value: c, cls: 'swatch', bg: c, title: c }))
 
   // --- colour -----------------------------------------------------------
   {
     const body = choice<string>(
       'color',
-      '色',
+      'option.color',
       swatches(),
       () => editor.settings.color,
       (color) => editor.updateSettings({ color }),
     )
     const picker = el('input', 'picker')
     picker.type = 'color'
-    picker.title = '任意の色'
     picker.addEventListener('input', () => editor.updateSettings({ color: picker.value }))
     body.appendChild(picker)
+    text.push(() => {
+      picker.title = t('option.colorCustom')
+    })
     sync.push(() => {
       picker.value = editor.settings.color
     })
@@ -189,8 +218,8 @@ export function buildUI(editor: Editor, root: { tools: HTMLElement; options: HTM
   // --- fill -------------------------------------------------------------
   choice<string | null>(
     'fill',
-    '塗り',
-    [{ value: null, cls: 'chip', html: 'なし' }, ...swatches()],
+    'option.fill',
+    [{ value: null, cls: 'chip', htmlKey: 'option.fillNone' }, ...swatches()],
     () => editor.settings.fill,
     (fill) => editor.updateSettings({ fill }),
   )
@@ -198,7 +227,7 @@ export function buildUI(editor: Editor, root: { tools: HTMLElement; options: HTM
   // --- numeric sliders --------------------------------------------------
   const slider = (
     name: keyof Settings,
-    label: string,
+    label: MessageKey,
     range: Omit<Range, 'uiScale'>,
     get: () => number,
     set: (v: number) => void,
@@ -215,29 +244,31 @@ export function buildUI(editor: Editor, root: { tools: HTMLElement; options: HTM
     sync.push(() => {
       const v = get()
       input.value = String(v)
+      // `px` and `%` are symbols, not words: no catalog entry needed.
       readout.textContent = `${v}${range.unit}`
     })
   }
 
   const px = { min: 0, max: 40, step: 1, unit: 'px' }
-  slider('fontSize', '文字サイズ', { ...px, min: 10, max: 200 }, () => editor.settings.fontSize, (v) => editor.updateSettings({ fontSize: v }))
-  slider('strokeWidth', '線の太さ', px, () => editor.settings.strokeWidth, (v) => editor.updateSettings({ strokeWidth: v }))
-  slider('arrowWidth', '太さ', { ...px, min: 1 }, () => editor.settings.arrowWidth, (v) => editor.updateSettings({ arrowWidth: v }))
-  slider('markerWidth', '太さ', { ...px, min: 2, max: 80 }, () => editor.settings.markerWidth, (v) => editor.updateSettings({ markerWidth: v }))
-  slider('emojiSize', '大きさ', { ...px, min: 16, max: 400, step: 2 }, () => editor.settings.emojiSize, (v) => editor.updateSettings({ emojiSize: v }))
+  slider('fontSize', 'option.fontSize', { ...px, min: 10, max: 200 }, () => editor.settings.fontSize, (v) => editor.updateSettings({ fontSize: v }))
+  slider('strokeWidth', 'option.strokeWidth', px, () => editor.settings.strokeWidth, (v) => editor.updateSettings({ strokeWidth: v }))
+  slider('arrowWidth', 'option.arrowWidth', { ...px, min: 1 }, () => editor.settings.arrowWidth, (v) => editor.updateSettings({ arrowWidth: v }))
+  slider('markerWidth', 'option.markerWidth', { ...px, min: 2, max: 80 }, () => editor.settings.markerWidth, (v) => editor.updateSettings({ markerWidth: v }))
+  slider('emojiSize', 'option.emojiSize', { ...px, min: 16, max: 400, step: 2 }, () => editor.settings.emojiSize, (v) => editor.updateSettings({ emojiSize: v }))
 
   // --- arrow style, stamps, region mode ---------------------------------
   choice<ArrowStyle>(
     'arrowStyle',
-    '種類',
-    ARROW_STYLES.map((s) => ({ value: s.id, cls: 'chip icon-chip', html: s.icon, title: s.label })),
+    'option.arrowStyle',
+    ARROW_STYLES.map((s) => ({ value: s.id, cls: 'chip icon-chip', html: s.icon, titleKey: s.label })),
     () => editor.settings.arrowStyle,
     (arrowStyle) => editor.updateSettings({ arrowStyle }),
   )
 
+  // The stamps are the characters themselves -- nothing to translate.
   choice<string>(
     'emoji',
-    'スタンプ',
+    'option.emoji',
     EMOJI.map((char) => ({ value: char, cls: 'emoji', html: char })),
     () => editor.settings.emoji,
     (emoji) => editor.updateSettings({ emoji }),
@@ -246,15 +277,15 @@ export function buildUI(editor: Editor, root: { tools: HTMLElement; options: HTM
 
   choice<RegionMode>(
     'regionMode',
-    '加工',
-    REGION_MODES.map((m) => ({ value: m.id, cls: 'chip', html: m.label })),
+    'option.regionMode',
+    REGION_MODES.map((m) => ({ value: m.id, cls: 'chip', htmlKey: m.label })),
     () => editor.settings.regionMode,
     (regionMode) => editor.updateSettings({ regionMode }),
   )
 
   // --- region strength --------------------------------------------------
   {
-    const body = group('regionStrength', '強さ')
+    const body = group('regionStrength', 'option.regionStrength')
     const input = el('input', 'range')
     input.type = 'range'
     const readout = el('span', 'readout')
@@ -280,16 +311,22 @@ export function buildUI(editor: Editor, root: { tools: HTMLElement; options: HTM
   // --- selection actions ------------------------------------------------
   const selectionActions = el('div', 'group')
   {
-    const del = el('button', 'chip danger', '削除')
+    const del = el('button', 'chip danger')
     del.type = 'button'
-    del.title = '削除 (Delete)'
     del.addEventListener('click', () => editor.deleteSelected())
     selectionActions.appendChild(del)
     root.options.appendChild(selectionActions)
+    text.push(() => {
+      del.textContent = t('action.delete')
+      del.title = `${t('action.delete')} (Delete)`
+    })
   }
 
-  const hint = el('div', 'hint', 'キャンバスをドラッグして移動、ピンチ / Ctrl+ホイールで拡大縮小。オブジェクトをクリックすると編集できます。')
+  const hint = el('div', 'hint')
   root.options.appendChild(hint)
+  text.push(() => {
+    hint.textContent = t('hint.canvas')
+  })
 
   // Zoom and pan emit too, and the controls cannot change without one of these
   // changing -- so the ~90 DOM writes below are skipped for a mere repaint.
@@ -311,6 +348,12 @@ export function buildUI(editor: Editor, root: { tools: HTMLElement; options: HTM
     for (const fn of sync) fn()
   }
 
+  const retranslate = (): void => {
+    for (const fn of text) fn()
+  }
+
+  onLocaleChange(retranslate)
+  retranslate()
   editor.onChange(refresh)
   refresh()
 }

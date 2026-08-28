@@ -1,4 +1,5 @@
 import { Editor } from './editor'
+import { LOCALES, initI18n, isLocale, locale, localeName, setLocale, t } from './i18n'
 import { buildUI, TOOLS } from './ui'
 import { initWasm } from './wasm'
 import './style.css'
@@ -7,10 +8,15 @@ async function boot(): Promise<void> {
   // Nothing below needs wasm, so let it load while the editor is built.
   const wasmReady = initWasm()
 
+  // Before anything reads a string: this fills in the markup's `data-i18n`
+  // keys, so the chrome is never shown in the wrong language.
+  initI18n()
+
   const stage = must<HTMLElement>('#stage')
   const editor = new Editor({ stage, canvas: must<HTMLCanvasElement>('#canvas') })
   buildUI(editor, { tools: must<HTMLElement>('#tools'), options: must<HTMLElement>('#options') })
   wireHeader(editor)
+  wireLanguage()
   wireInput(editor)
   wireKeyboard(editor)
 
@@ -77,7 +83,24 @@ function wireHeader(editor: Editor): void {
 
 function confirmDiscard(editor: Editor): boolean {
   if (editor.doc.objects.length === 0) return true
-  return window.confirm('編集中の内容が破棄されます。よろしいですか?')
+  return window.confirm(t('confirm.discard'))
+}
+
+// --- language ----------------------------------------------------------
+
+function wireLanguage(): void {
+  const select = must<HTMLSelectElement>('#lang')
+  for (const l of LOCALES) {
+    const option = document.createElement('option')
+    option.value = l
+    // Each language names itself, so this text is not translated.
+    option.textContent = localeName(l)
+    select.appendChild(option)
+  }
+  select.value = locale()
+  select.addEventListener('change', () => {
+    if (isLocale(select.value)) setLocale(select.value)
+  })
 }
 
 // --- image in / out ----------------------------------------------------
@@ -86,9 +109,9 @@ async function loadImage(editor: Editor, source: Blob): Promise<void> {
   try {
     const bitmap = await createImageBitmap(source)
     editor.setImage(bitmap, bitmap.width, bitmap.height)
-    toast(`${bitmap.width} × ${bitmap.height} を読み込みました`)
+    toast(t('toast.imageLoaded', { width: bitmap.width, height: bitmap.height }))
   } catch {
-    toast('画像を読み込めませんでした')
+    toast(t('toast.imageFailed'))
   }
 }
 
@@ -109,16 +132,16 @@ async function savePng(editor: Editor): Promise<void> {
   // Revoking straight after `click()` can cut the download off before the
   // browser has read the blob; one task later is safely past that.
   setTimeout(() => URL.revokeObjectURL(url), 0)
-  toast('PNG を保存しました')
+  toast(t('toast.saved'))
 }
 
 async function copyPng(editor: Editor): Promise<void> {
   try {
     const blob = await editor.toBlob()
     await navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })])
-    toast('クリップボードにコピーしました')
+    toast(t('toast.copied'))
   } catch {
-    toast('このブラウザではコピーできません。PNG 保存を使ってください')
+    toast(t('toast.copyUnsupported'))
   }
 }
 
