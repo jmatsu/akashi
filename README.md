@@ -78,7 +78,7 @@ PNG を再エンコードするアプリを経由するとチャンクは失わ�
 
 最小構成の wasm + PWA です。依存は Vite・TypeScript・vite-plugin-pwa の 3 つだけで、
 UI フレームワークもキャンバスライブラリも i18n ライブラリも使っていません。ビルド後は
-gzip 圧縮で約 25KB（wasm 8KB を含む）、プリキャッシュ全体で 100KB です。
+gzip 圧縮で約 25KB（wasm 8KB を含む）、プリキャッシュ全体で 105KB です。
 
 ```
 crate/src/lib.rs   Rust: 画素処理（モザイク / 黒塗り / 透明化）→ wasm
@@ -88,7 +88,8 @@ src/render.ts      ドキュメント 1:1 のシーンキャンバスへの描�
 src/editor.ts      状態・履歴・ポインタ操作・ビューポート
 src/ui.ts          ツールバーと文脈依存のオプションバー
 src/main.ts        起動・入出力・ショートカット・Service Worker
-src/draft.ts       下書き PNG の読み書き（PNG チャンクと、受け取った文書の検証）
+src/draft.ts       下書きの読み書き（セッションの詰め込みと、受け取った文書の検証）
+src/png.ts         PNG コンテナ（署名・チャンク・CRC）。アイコン生成スクリプトと共用
 src/brand.ts       色とアイコン定義（マニフェスト生成とアイコン生成が共有）
 src/i18n.ts        ロケールの決定・記憶・適用（DOM 側）
 src/locales/       カタログ本体（DOM 非依存。ビルドとテストからも読む）

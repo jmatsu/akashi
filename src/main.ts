@@ -1,4 +1,4 @@
-import { decodeDraft, encodeDraft } from './draft'
+import { PROBE_BYTES, decodeDraft, encodeDraft, mayCarryDraft } from './draft'
 import { Editor } from './editor'
 import { LOCALES, initI18n, isLocale, locale, localeName, setLocale, t } from './i18n'
 import { buildUI, TOOLS } from './ui'
@@ -112,18 +112,15 @@ function wireLanguage(): void {
  *
  * A draft carries its session inside the PNG (see `draft.ts`), so this is also
  * the door a draft from another device comes in through -- paste and drag-drop
- * included, with no separate import step. Anything without a session in it is an
- * ordinary image, which is the common case and stays untouched.
+ * included, with no separate import step.
+ *
+ * The two rungs are tried in order, and a draft that will not open falls to the
+ * one below it: the file is still a PNG of the annotated screenshot, which is
+ * exactly what `draft.ts` promises when a session cannot be recovered.
  */
 async function openFile(editor: Editor, source: Blob): Promise<void> {
+  if (await openDraft(editor, source)) return
   try {
-    const draft = decodeDraft(new Uint8Array(await source.arrayBuffer()))
-    if (draft !== null) {
-      const image = draft.image === null ? null : new Blob([draft.image.bytes], { type: draft.image.mime })
-      editor.restoreDraft(draft.doc, image === null ? null : await createImageBitmap(image), image)
-      toast(t('toast.draftLoaded', { count: draft.doc.objects.length }))
-      return
-    }
     const bitmap = await createImageBitmap(source)
     // The blob is kept so a draft made from this image can carry the original
     // pixels rather than a re-encode of the annotated ones.
@@ -131,6 +128,33 @@ async function openFile(editor: Editor, source: Blob): Promise<void> {
     toast(t('toast.imageLoaded', { width: bitmap.width, height: bitmap.height }))
   } catch {
     toast(t('toast.imageFailed'))
+  }
+}
+
+/** Open `source` as a draft, or report that it is not one we could open. */
+async function openDraft(editor: Editor, source: Blob): Promise<boolean> {
+  try {
+    // Only a file that looks like it carries a session is read whole; an
+    // ordinary screenshot goes straight to `createImageBitmap`, which decodes
+    // it off-thread without it ever landing in the heap here.
+    const head = new Uint8Array(await source.slice(0, PROBE_BYTES).arrayBuffer())
+    if (!mayCarryDraft(head)) return false
+    const draft = decodeDraft(new Uint8Array(await source.arrayBuffer()))
+    if (draft === null) return false
+
+    // A draft whose embedded image will not decode throws here and falls to
+    // the plain-image path, which still has the annotated PNG to show.
+    const embedded = draft.image
+    let image: { bitmap: ImageBitmap; source: Blob } | null = null
+    if (embedded !== null) {
+      const blob = new Blob([embedded.bytes], { type: embedded.mime })
+      image = { bitmap: await createImageBitmap(blob), source: blob }
+    }
+    editor.restoreDraft(draft.doc, image)
+    toast(t('toast.draftLoaded', { count: draft.doc.objects.length }))
+    return true
+  } catch {
+    return false
   }
 }
 
@@ -159,25 +183,25 @@ async function savePng(editor: Editor): Promise<void> {
 }
 
 /**
- * Hand the whole editing session to another device.
- *
- * The file is a normal PNG of the annotated image with the session inside it, so
- * it travels over whatever the two devices already share -- AirDrop, Quick
- * Share, a cable, a folder. That is the point: the screenshot goes device to
- * device and never to a server, because aka has none. The share sheet is used
- * where the browser has one, and a plain download is the fallback everywhere
- * else.
+ * Hand the whole editing session to another device, as a PNG that carries it
+ * (see `draft.ts`). The share sheet is used where the browser has one, and a
+ * plain download is the fallback everywhere else.
  */
 async function shareDraft(editor: Editor): Promise<void> {
-  const flat = new Uint8Array(await (await editor.toBlob()).arrayBuffer())
   const source = editor.sourceImage()
+  // The render and the read of the original are independent, and the render is
+  // the slow half: waiting for them in series would hide the read behind
+  // nothing.
+  const [flat, bytes] = await Promise.all([
+    editor.toBlob().then((blob) => blob.arrayBuffer()),
+    source?.arrayBuffer(),
+  ])
   const image =
-    source === null
+    source === null || bytes === undefined
       ? null
-      : { mime: source.type || 'image/png', bytes: new Uint8Array(await source.arrayBuffer()) }
-  const file = new File([encodeDraft(flat, { doc: editor.doc, image })], fileName('aka-draft'), {
-    type: 'image/png',
-  })
+      : { mime: source.type || 'image/png', bytes: new Uint8Array(bytes) }
+  const parts = encodeDraft(new Uint8Array(flat), { doc: editor.doc, image })
+  const file = new File(parts, fileName('aka-draft'), { type: 'image/png' })
 
   if (navigator.canShare?.({ files: [file] })) {
     try {

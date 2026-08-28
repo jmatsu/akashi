@@ -126,7 +126,7 @@ export class Editor {
   }
 
   /** Replace the document with an image, sized to it. */
-  setImage(image: HTMLImageElement | ImageBitmap, width: number, height: number, source: Blob | null = null): void {
+  setImage(image: HTMLImageElement | ImageBitmap, width: number, height: number, source: Blob): void {
     this.image = image
     this.imageSource = source
     this.doc = { width, height, background: null, objects: [] }
@@ -135,15 +135,18 @@ export class Editor {
 
   /**
    * Reopen a document that was drawn somewhere else -- the far side of a draft
-   * handed over between devices.
+   * handed over between devices. `image` is null for one started from the blank
+   * canvas; the bitmap and the bytes it was decoded from travel together,
+   * because a document with one and not the other cannot be handed on again.
    *
-   * Object ids are reissued locally: they come from a counter, and two devices
-   * that both started at zero would otherwise hand back colliding ids the moment
-   * anything new is drawn on top.
+   * Ids are reissued here. They come from a counter, so two devices that both
+   * started at zero would otherwise hand back colliding ids the moment anything
+   * new is drawn on top -- and this is also where a draft carrying duplicate
+   * ids of its own gets normalised, import being where untrusted data lands.
    */
-  restoreDraft(doc: Doc, image: HTMLImageElement | ImageBitmap | null, source: Blob | null): void {
-    this.image = image
-    this.imageSource = image === null ? null : source
+  restoreDraft(doc: Doc, image: { bitmap: ImageBitmap; source: Blob } | null): void {
+    this.image = image?.bitmap ?? null
+    this.imageSource = image?.source ?? null
     this.doc = { ...doc, objects: doc.objects.map((o) => ({ ...o, id: newId() })) }
     this.afterDocReplaced()
   }

@@ -1,6 +1,6 @@
 import { strict as assert } from 'node:assert'
 import { test } from 'node:test'
-import { decodeDraft, DRAFT_CHUNK, encodeDraft, sanitizeDoc } from '../src/draft.ts'
+import { decodeDraft, DRAFT_CHUNK, encodeDraft, mayCarryDraft, sanitizeDoc } from '../src/draft.ts'
 import type { Draft } from '../src/draft.ts'
 import type { ArrowObj, Doc, ShapeObj } from '../src/types.ts'
 
@@ -65,8 +65,29 @@ const screenshot = new Uint8Array([9, 8, 7, 6, 5, 4, 3, 2, 1])
 
 const draft: Draft = { doc, image: { mime: 'image/png', bytes: screenshot } }
 
+/** Where the draft chunk lands: the signature, then IHDR's own 12 + 13 bytes. */
+const AFTER_IHDR = 8 + 25
+
+/**
+ * `encodeDraft` hands back the file in pieces so the writer never copies the
+ * screenshot; the tests want the finished bytes, which is the one join that
+ * `new File(parts)` does in the app.
+ */
+function join(parts: Uint8Array[]): Uint8Array<ArrayBuffer> {
+  const out = new Uint8Array(parts.reduce((n, p) => n + p.length, 0))
+  let at = 0
+  for (const part of parts) {
+    out.set(part, at)
+    at += part.length
+  }
+  return out
+}
+
+const carry = (png: Uint8Array<ArrayBuffer>, d: Draft = draft): Uint8Array<ArrayBuffer> =>
+  join(encodeDraft(png, d))
+
 test('a draft survives the round trip through a PNG', () => {
-  const decoded = decodeDraft(encodeDraft(fakePng(), draft))
+  const decoded = decodeDraft(carry(fakePng()))
   assert.ok(decoded)
   assert.deepEqual(decoded.doc, doc)
   assert.equal(decoded.image?.mime, 'image/png')
@@ -75,26 +96,25 @@ test('a draft survives the round trip through a PNG', () => {
 
 test('the pixels are left exactly as they were', () => {
   const original = fakePng()
-  const carrier = encodeDraft(original, draft)
+  const carrier = carry(original)
   // Cut the inserted chunk back out -- signature plus IHDR is where it went --
   // and what is left has to be the original file, byte for byte. A draft is a
   // PNG that any viewer still renders.
-  const at = 8 + 25
   const stripped = new Uint8Array(original.length)
-  stripped.set(carrier.subarray(0, at), 0)
-  stripped.set(carrier.subarray(carrier.length - (original.length - at)), at)
+  stripped.set(carrier.subarray(0, AFTER_IHDR), 0)
+  stripped.set(carrier.subarray(carrier.length - (original.length - AFTER_IHDR)), AFTER_IHDR)
   assert.deepEqual([...stripped], [...original])
 })
 
 test('the draft chunk goes right after IHDR', () => {
-  const carrier = encodeDraft(fakePng(), draft)
-  const name = String.fromCharCode(...carrier.subarray(8 + 25 + 4, 8 + 25 + 8))
+  const carrier = carry(fakePng())
+  const name = String.fromCharCode(...carrier.subarray(AFTER_IHDR + 4, AFTER_IHDR + 8))
   assert.equal(name, DRAFT_CHUNK)
 })
 
 test('a draft with no image round trips as a blank-canvas document', () => {
   const blank: Doc = { width: 1280, height: 720, background: '#ffffff', objects: [] }
-  const decoded = decodeDraft(encodeDraft(fakePng(), { doc: blank, image: null }))
+  const decoded = decodeDraft(carry(fakePng(), { doc: blank, image: null }))
   assert.ok(decoded)
   assert.deepEqual(decoded.doc, blank)
   assert.equal(decoded.image, null)
@@ -110,16 +130,25 @@ test('a file that is not a PNG at all carries no draft', () => {
 })
 
 test('a truncated file is an image, not a crash', () => {
-  const carrier = encodeDraft(fakePng(), draft)
+  const carrier = carry(fakePng())
   assert.equal(decodeDraft(carrier.slice(0, carrier.length - 20)), null)
 })
 
 test('a mangled payload costs the annotations, not the file', () => {
-  const carrier = encodeDraft(fakePng(), draft)
-  // Somewhere inside the JSON of the draft chunk, which starts after the
-  // signature, IHDR, and the chunk's own length/name/payload length.
-  carrier[8 + 25 + 8 + 4 + 6] = 0x7b
+  const carrier = carry(fakePng())
+  // Somewhere inside the JSON of the draft chunk, past the chunk's own
+  // length/name and the payload's length.
+  carrier[AFTER_IHDR + 8 + 4 + 6] = 0x7b
   assert.equal(decodeDraft(carrier), null)
+})
+
+test('the probe answers from the head of a file, and only for a draft', () => {
+  // What `main.ts` reads before deciding to read the rest: the first bytes are
+  // enough to keep an ordinary screenshot out of the heap.
+  const carrier = carry(fakePng())
+  assert.equal(mayCarryDraft(carrier.subarray(0, 512) as Uint8Array<ArrayBuffer>), true)
+  assert.equal(mayCarryDraft(fakePng()), false)
+  assert.equal(mayCarryDraft(new Uint8Array([1, 2, 3])), false)
 })
 
 test('encoding refuses anything that is not a PNG', () => {
@@ -163,6 +192,19 @@ test('a marker keeps its points and loses them if they are not points', () => {
   const bad = { id: 'm2', type: 'marker', points: [{ x: 1 }], color: '#000000', width: 16 }
   const sane = sanitizeDoc({ width: 10, height: 10, background: null, objects: [good, bad] })
   assert.deepEqual(sane?.objects, [good])
+})
+
+test('an object naming a method of Object is not an object', () => {
+  // `type: 'toString'` finds a function on the prototype of the field table if
+  // it is looked up carelessly, and an object of a type nothing draws crashes
+  // the geometry rather than being dropped here.
+  const sane = sanitizeDoc({
+    width: 800,
+    height: 600,
+    background: null,
+    objects: [{ id: 'x', type: 'toString' }, { id: 'y', type: 'constructor' }, rect],
+  })
+  assert.deepEqual(sane?.objects, [rect])
 })
 
 test('a NaN slipped in as a coordinate is not a coordinate', () => {
