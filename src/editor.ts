@@ -39,7 +39,7 @@ let nextId = 0
 const newId = (): string => `o${++nextId}`
 
 export class Editor {
-  doc: Doc = { ...BLANK_DOC, objects: [] }
+  doc: Doc = { ...BLANK_DOC, name: null, objects: [] }
   settings: Settings = { ...DEFAULT_SETTINGS, regionStrength: { ...DEFAULT_SETTINGS.regionStrength } }
   tool: ToolId = 'select'
   selectedId: string | null = null
@@ -121,16 +121,37 @@ export class Editor {
   newDoc(width = BLANK_DOC.width, height = BLANK_DOC.height, background: string | null = BLANK_DOC.background): void {
     this.image = null
     this.imageSource = null
-    this.doc = { width, height, background, objects: [] }
+    this.doc = { width, height, background, name: null, objects: [] }
     this.afterDocReplaced()
   }
 
-  /** Replace the document with an image, sized to it. */
-  setImage(image: HTMLImageElement | ImageBitmap, width: number, height: number, source: Blob): void {
+  /**
+   * Replace the document with an image, sized to it. `name` is the file it came
+   * from, where it came from one -- a pasted or dropped blob has no name to
+   * take, and that document stays unnamed.
+   */
+  setImage(
+    image: HTMLImageElement | ImageBitmap,
+    width: number,
+    height: number,
+    source: Blob,
+    name: string | null = null,
+  ): void {
     this.image = image
     this.imageSource = source
-    this.doc = { width, height, background: null, objects: [] }
+    this.doc = { width, height, background: null, name, objects: [] }
     this.afterDocReplaced()
+  }
+
+  /**
+   * Rename the document. Kept out of the undo history on purpose: history is
+   * the drawing, and an undo reaching back past a rename to restore the old one
+   * would be a surprise, not a convenience.
+   */
+  setName(name: string): void {
+    const trimmed = name.trim()
+    this.doc.name = trimmed === '' ? null : name
+    this.emit()
   }
 
   /**

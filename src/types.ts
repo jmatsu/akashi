@@ -115,6 +115,13 @@ export interface Doc {
   height: number
   /** Paper colour behind everything. `null` renders as transparent. */
   background: string | null
+  /**
+   * What the user calls this document, and so what its exports are named.
+   * `null` for one that has never been named, which falls back to a timestamp
+   * (see `filename.ts`). Travels inside a draft, so it is a name and never a
+   * path -- `cleanName` is what says which is which.
+   */
+  name: string | null
   objects: Obj[]
 }
 

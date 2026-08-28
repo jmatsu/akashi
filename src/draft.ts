@@ -24,6 +24,7 @@
 
 // `png.ts` is named with its extension because `scripts/make-icons.mjs` and the
 // tests load these modules through Node directly, which does not guess at one.
+import { cleanName } from './filename.ts'
 import { PNG_SIGNATURE, chunk, isPng, readChunks } from './png.ts'
 import type { Bytes } from './png.ts'
 import type { ArrowStyle, Doc, Obj, ObjOf, ObjType, Pt, RegionMode } from './types'
@@ -171,11 +172,13 @@ function parsePayload(bytes: Bytes): Draft | null {
  */
 export function sanitizeDoc(value: unknown): Doc | null {
   if (!isRecord(value)) return null
-  const { width, height, background, objects } = value
+  const { width, height, background, name, objects } = value
   if (!isSize(width) || !isSize(height)) return null
   if (background !== null && typeof background !== 'string') return null
   if (!Array.isArray(objects)) return null
-  return { width, height, background, objects: objects.filter(isObj) }
+  // The name is the one field that leaves the document and becomes a file on
+  // this device, so a draft's is cleaned rather than merely type-checked.
+  return { width, height, background, name: cleanName(name), objects: objects.filter(isObj) }
 }
 
 type Check<T> = (v: unknown) => v is T

@@ -70,6 +70,7 @@ function apply(): void {
  *                        never hold user input.
  * - `data-i18n-title`    the `title` tooltip
  * - `data-i18n-label`    `aria-label`
+ * - `data-i18n-placeholder` the `placeholder` of an input
  * - `data-i18n-content`  the `content` attribute, for `<meta>`
  *
  * A `data-shortcut` alongside a title is appended in parentheses, which keeps
@@ -89,6 +90,9 @@ export function applyStaticText(root: ParentNode = document): void {
   })
   each(root, 'data-i18n-label', (node, text) => {
     node.setAttribute('aria-label', text)
+  })
+  each(root, 'data-i18n-placeholder', (node, text) => {
+    node.setAttribute('placeholder', text)
   })
   each(root, 'data-i18n-content', (node, text) => {
     node.setAttribute('content', text)

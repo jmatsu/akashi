@@ -31,6 +31,8 @@ export const ja: Catalog = {
   'action.draft': '下書き出力',
   'action.draftTitle': '別の端末に引き継ぐ',
   'action.delete': '削除',
+  'name.label': '保存するファイルの名前',
+  'name.placeholder': 'aka-<日時>',
   'language.label': '言語',
 
   // --- app regions ------------------------------------------------------

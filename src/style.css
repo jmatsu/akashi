@@ -124,6 +124,30 @@ button {
   font-weight: 600;
 }
 
+/* What the exports are named. Sized for a short name, and it gives way first
+   when the bar is tight -- the buttons either side of it are the ones that have
+   to stay reachable. */
+#name {
+  flex: 0 1 160px;
+  min-width: 90px;
+  min-height: 32px;
+  padding: 0 8px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--panel-hi);
+  color: inherit;
+  font: inherit;
+}
+
+#name::placeholder {
+  color: var(--muted);
+}
+
+#name:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: -1px;
+}
+
 /* The language picker sits with the actions and matches their chrome. */
 #lang {
   min-height: 32px;

@@ -40,6 +40,9 @@ export const en = {
   'action.draft': 'Draft',
   'action.draftTitle': 'Hand this session to another device',
   'action.delete': 'Delete',
+  'name.label': 'Name for saved files',
+  // Shows the shape of what an unnamed document is saved as.
+  'name.placeholder': 'aka-<date>',
   'language.label': 'Language',
 
   // --- app regions ------------------------------------------------------
