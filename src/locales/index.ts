@@ -53,11 +53,7 @@ export function isMessageKey(value: string): value is MessageKey {
  * `{width}` in the UI names the parameter that went missing, where an empty
  * gap would say nothing.
  */
-export function format(
-  locale: Locale,
-  key: MessageKey,
-  params?: Record<string, string | number>,
-): string {
+export function format(locale: Locale, key: MessageKey, params?: Record<string, string | number>): string {
   // The fallback is unreachable while `Catalog` holds, and is what keeps a
   // catalog edited outside the type checker from blanking the UI.
   const template = CATALOGS[locale][key] ?? CATALOGS[DEFAULT_LOCALE][key]

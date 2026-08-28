@@ -15,14 +15,55 @@ interface ToolSpec {
 /** `key` doubles as the keyboard shortcut and is shown in the tooltip. */
 export const TOOLS: readonly ToolSpec[] = [
   { id: 'select', label: 'tool.select', key: 'v', icon: svg('<path d="M5 3l14 8.5-6.2 1.4L9.6 19z"/>') },
-  { id: 'text', label: 'tool.text', key: 't', icon: svg('<path d="M5 5h14M12 5v14M9 19h6" fill="none" stroke="currentColor" stroke-width="2"/>') },
-  { id: 'rect', label: 'tool.rect', key: 'r', icon: svg('<rect x="4" y="6" width="16" height="12" rx="1" fill="none" stroke="currentColor" stroke-width="2"/>') },
-  { id: 'circle', label: 'tool.circle', key: 'o', icon: svg('<circle cx="12" cy="12" r="7" fill="none" stroke="currentColor" stroke-width="2"/>') },
-  { id: 'ellipse', label: 'tool.ellipse', key: 'e', icon: svg('<ellipse cx="12" cy="12" rx="9" ry="6" fill="none" stroke="currentColor" stroke-width="2"/>') },
-  { id: 'arrow', label: 'tool.arrow', key: 'a', icon: svg('<path d="M5 19L19 5M11 5h8v8" fill="none" stroke="currentColor" stroke-width="2"/>') },
-  { id: 'marker', label: 'tool.marker', key: 'm', icon: svg('<path d="M4 20l3-1 10-10-2-2L5 17z" fill="none" stroke="currentColor" stroke-width="2"/><path d="M15 5l2-2 4 4-2 2z"/>') },
+  {
+    id: 'text',
+    label: 'tool.text',
+    key: 't',
+    icon: svg('<path d="M5 5h14M12 5v14M9 19h6" fill="none" stroke="currentColor" stroke-width="2"/>'),
+  },
+  {
+    id: 'rect',
+    label: 'tool.rect',
+    key: 'r',
+    icon: svg(
+      '<rect x="4" y="6" width="16" height="12" rx="1" fill="none" stroke="currentColor" stroke-width="2"/>',
+    ),
+  },
+  {
+    id: 'circle',
+    label: 'tool.circle',
+    key: 'o',
+    icon: svg('<circle cx="12" cy="12" r="7" fill="none" stroke="currentColor" stroke-width="2"/>'),
+  },
+  {
+    id: 'ellipse',
+    label: 'tool.ellipse',
+    key: 'e',
+    icon: svg('<ellipse cx="12" cy="12" rx="9" ry="6" fill="none" stroke="currentColor" stroke-width="2"/>'),
+  },
+  {
+    id: 'arrow',
+    label: 'tool.arrow',
+    key: 'a',
+    icon: svg('<path d="M5 19L19 5M11 5h8v8" fill="none" stroke="currentColor" stroke-width="2"/>'),
+  },
+  {
+    id: 'marker',
+    label: 'tool.marker',
+    key: 'm',
+    icon: svg(
+      '<path d="M4 20l3-1 10-10-2-2L5 17z" fill="none" stroke="currentColor" stroke-width="2"/><path d="M15 5l2-2 4 4-2 2z"/>',
+    ),
+  },
   { id: 'emoji', label: 'tool.emoji', key: 's', icon: '<span class="emoji-icon">😀</span>' },
-  { id: 'region', label: 'tool.region', key: 'g', icon: svg('<rect x="4" y="6" width="16" height="12" rx="1" fill="none" stroke="currentColor" stroke-width="2" stroke-dasharray="3 2"/><path d="M7 9h3v3H7zM14 12h3v3h-3z"/>') },
+  {
+    id: 'region',
+    label: 'tool.region',
+    key: 'g',
+    icon: svg(
+      '<rect x="4" y="6" width="16" height="12" rx="1" fill="none" stroke="currentColor" stroke-width="2" stroke-dasharray="3 2"/><path d="M7 9h3v3H7zM14 12h3v3h-3z"/>',
+    ),
+  },
 ]
 
 function svg(inner: string): string {
@@ -66,9 +107,23 @@ function groupsFor(context: Context): ReadonlySet<keyof Settings> {
 }
 
 const ARROW_STYLES: { id: ArrowStyle; label: MessageKey; icon: string }[] = [
-  { id: 'line', label: 'arrow.line', icon: svg('<path d="M3 12h16M13 7l6 5-6 5" fill="none" stroke="currentColor" stroke-width="2"/>') },
-  { id: 'solid', label: 'arrow.solid', icon: svg('<path d="M3 12h11" stroke="currentColor" stroke-width="3"/><path d="M21 12l-9-5v10z"/>') },
-  { id: 'double', label: 'arrow.double', icon: svg('<path d="M7 12h10" stroke="currentColor" stroke-width="3"/><path d="M22 12l-8-4.5v9zM2 12l8-4.5v9z"/>') },
+  {
+    id: 'line',
+    label: 'arrow.line',
+    icon: svg('<path d="M3 12h16M13 7l6 5-6 5" fill="none" stroke="currentColor" stroke-width="2"/>'),
+  },
+  {
+    id: 'solid',
+    label: 'arrow.solid',
+    icon: svg('<path d="M3 12h11" stroke="currentColor" stroke-width="3"/><path d="M21 12l-9-5v10z"/>'),
+  },
+  {
+    id: 'double',
+    label: 'arrow.double',
+    icon: svg(
+      '<path d="M7 12h10" stroke="currentColor" stroke-width="3"/><path d="M22 12l-8-4.5v9zM2 12l8-4.5v9z"/>',
+    ),
+  },
 ]
 
 const REGION_MODES: { id: RegionMode; label: MessageKey }[] = [
@@ -108,7 +163,11 @@ interface Choice<T> {
   titleKey?: MessageKey
 }
 
-function el<K extends keyof HTMLElementTagNameMap>(tag: K, className?: string, html?: string): HTMLElementTagNameMap[K] {
+function el<K extends keyof HTMLElementTagNameMap>(
+  tag: K,
+  className?: string,
+  html?: string,
+): HTMLElementTagNameMap[K] {
   const node = document.createElement(tag)
   if (className) node.className = className
   if (html !== undefined) node.innerHTML = html
@@ -158,7 +217,7 @@ export function buildUI(editor: Editor, root: { tools: HTMLElement; options: HTM
   }
 
   /** A row of buttons of which exactly one carries `.on`. */
-  const choice = <T,>(
+  const choice = <T>(
     name: keyof Settings,
     label: MessageKey,
     items: readonly Choice<T>[],
@@ -250,11 +309,41 @@ export function buildUI(editor: Editor, root: { tools: HTMLElement; options: HTM
   }
 
   const px = { min: 0, max: 40, step: 1, unit: 'px' }
-  slider('fontSize', 'option.fontSize', { ...px, min: 10, max: 200 }, () => editor.settings.fontSize, (v) => editor.updateSettings({ fontSize: v }))
-  slider('strokeWidth', 'option.strokeWidth', px, () => editor.settings.strokeWidth, (v) => editor.updateSettings({ strokeWidth: v }))
-  slider('arrowWidth', 'option.arrowWidth', { ...px, min: 1 }, () => editor.settings.arrowWidth, (v) => editor.updateSettings({ arrowWidth: v }))
-  slider('markerWidth', 'option.markerWidth', { ...px, min: 2, max: 80 }, () => editor.settings.markerWidth, (v) => editor.updateSettings({ markerWidth: v }))
-  slider('emojiSize', 'option.emojiSize', { ...px, min: 16, max: 400, step: 2 }, () => editor.settings.emojiSize, (v) => editor.updateSettings({ emojiSize: v }))
+  slider(
+    'fontSize',
+    'option.fontSize',
+    { ...px, min: 10, max: 200 },
+    () => editor.settings.fontSize,
+    (v) => editor.updateSettings({ fontSize: v }),
+  )
+  slider(
+    'strokeWidth',
+    'option.strokeWidth',
+    px,
+    () => editor.settings.strokeWidth,
+    (v) => editor.updateSettings({ strokeWidth: v }),
+  )
+  slider(
+    'arrowWidth',
+    'option.arrowWidth',
+    { ...px, min: 1 },
+    () => editor.settings.arrowWidth,
+    (v) => editor.updateSettings({ arrowWidth: v }),
+  )
+  slider(
+    'markerWidth',
+    'option.markerWidth',
+    { ...px, min: 2, max: 80 },
+    () => editor.settings.markerWidth,
+    (v) => editor.updateSettings({ markerWidth: v }),
+  )
+  slider(
+    'emojiSize',
+    'option.emojiSize',
+    { ...px, min: 16, max: 400, step: 2 },
+    () => editor.settings.emojiSize,
+    (v) => editor.updateSettings({ emojiSize: v }),
+  )
 
   // --- arrow style, stamps, region mode ---------------------------------
   choice<ArrowStyle>(
@@ -292,7 +381,10 @@ export function buildUI(editor: Editor, root: { tools: HTMLElement; options: HTM
     input.addEventListener('input', () => {
       const mode = editor.settings.regionMode
       editor.updateSettings({
-        regionStrength: { ...editor.settings.regionStrength, [mode]: Number(input.value) / REGION_RANGE[mode].uiScale },
+        regionStrength: {
+          ...editor.settings.regionStrength,
+          [mode]: Number(input.value) / REGION_RANGE[mode].uiScale,
+        },
       })
     })
     body.append(input, readout)

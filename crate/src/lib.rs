@@ -81,7 +81,8 @@ fn mosaic(data: &mut [u8], w: usize, h: usize, block: usize) {
 fn blackout(data: &mut [u8], strength: f32) {
     let keep = 1.0 - strength;
     let floor = (255.0 * strength) as u8;
-    for px in data.chunks_exact_mut(4) {
+    // RGBA, so the remainder is always empty.
+    for px in data.as_chunks_mut::<4>().0 {
         px[0] = (px[0] as f32 * keep) as u8;
         px[1] = (px[1] as f32 * keep) as u8;
         px[2] = (px[2] as f32 * keep) as u8;
@@ -93,7 +94,7 @@ fn blackout(data: &mut [u8], strength: f32) {
 
 fn transparent(data: &mut [u8], strength: f32) {
     let keep = 1.0 - strength;
-    for px in data.chunks_exact_mut(4) {
+    for px in data.as_chunks_mut::<4>().0 {
         px[3] = (px[3] as f32 * keep) as u8;
     }
 }

@@ -17,7 +17,9 @@ import type { RegionMode } from '../src/types.ts'
  * Requires `npm run build:wasm` to have produced `src/wasm/`.
  */
 const wasm = await import('../src/wasm/aka_core.js')
-wasm.initSync({ module: readFileSync(fileURLToPath(new URL('../src/wasm/aka_core_bg.wasm', import.meta.url))) })
+wasm.initSync({
+  module: readFileSync(fileURLToPath(new URL('../src/wasm/aka_core_bg.wasm', import.meta.url))),
+})
 
 /** Mirrors how `applyRegion` aliases an `ImageData` buffer. */
 function run(pixels: number[], w: number, h: number, mode: RegionMode | number, strength: number): number[] {

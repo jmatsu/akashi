@@ -222,7 +222,13 @@ export function translate(target: Obj, start: Obj, dx: number, dy: number): void
     }
     return
   }
-  if (target.type === 'arrow' || target.type === 'marker' || start.type === 'arrow' || start.type === 'marker') return
+  if (
+    target.type === 'arrow' ||
+    target.type === 'marker' ||
+    start.type === 'arrow' ||
+    start.type === 'marker'
+  )
+    return
   target.x = start.x + dx
   target.y = start.y + dy
 }
@@ -256,7 +262,9 @@ export function locksAspect(o: Obj): boolean {
  */
 export function resize(target: Obj, start: Obj, handle: HandleId, p: Pt, keepAspect: boolean): void {
   if (target.type === 'arrow' && start.type === 'arrow') {
-    const end = keepAspect ? snapFrom(handle === 'p1' ? { x: start.x2, y: start.y2 } : { x: start.x1, y: start.y1 }, p) : p
+    const end = keepAspect
+      ? snapFrom(handle === 'p1' ? { x: start.x2, y: start.y2 } : { x: start.x1, y: start.y1 }, p)
+      : p
     if (handle === 'p1') {
       target.x1 = end.x
       target.y1 = end.y
