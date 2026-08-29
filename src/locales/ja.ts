@@ -43,6 +43,7 @@ export const ja: Catalog = {
   'menu.settings': '設定',
   'menu.file': 'ファイル',
   'menu.export': '書き出し',
+  'menu.repo': 'ソースコード',
 
   // --- app regions ------------------------------------------------------
   'region.apps': 'アプリ',

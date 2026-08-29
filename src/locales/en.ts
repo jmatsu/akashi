@@ -51,6 +51,7 @@ export const en = {
   'menu.settings': 'Settings',
   'menu.file': 'File',
   'menu.export': 'Export',
+  'menu.repo': 'Source code',
 
   // --- app regions ------------------------------------------------------
   'region.apps': 'Apps',
