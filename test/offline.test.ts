@@ -17,10 +17,11 @@ const dist = new URL('../dist/', import.meta.url)
 
 /**
  * Absolute URLs that are allowed to appear in the build, each because nothing
- * ever requests it: an XML namespace is an identifier, and workbox prints its
- * documentation link in a console warning.
+ * ever requests it: an XML namespace is an identifier, workbox prints its
+ * documentation link in a console warning, and the repository is a link the
+ * viewer follows themselves.
  */
-const ALLOWED = ['http://www.w3.org/', 'https://bit.ly/wb-precache']
+const ALLOWED = ['http://www.w3.org/', 'https://bit.ly/wb-precache', 'https://github.com/jmatsu/akashi']
 
 const REMOTE = /\b[a-z][a-z0-9+.-]*:\/\/[^\s"'`)<>]+/gi
 /** A quoted `//host.tld`, which fetches over whatever scheme the page uses. */

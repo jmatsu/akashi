@@ -183,6 +183,13 @@ button {
   cursor: pointer;
 }
 
+.menu-popup a.menu-item {
+  display: flex;
+  align-items: center;
+  color: inherit;
+  text-decoration: none;
+}
+
 .menu-popup .menu-item:hover:not(:disabled) {
   background: var(--panel-hi);
 }
