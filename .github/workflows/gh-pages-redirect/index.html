@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>aka has moved</title>
+    <meta name="robots" content="noindex" />
+    <link rel="canonical" href="https://aka.jmatsu.dev/" />
+    <!-- The redirect without JavaScript. The script below does it faster, and
+         carries the rest of the URL across; this only gets the origin right. -->
+    <meta http-equiv="refresh" content="0; url=https://aka.jmatsu.dev/" />
+    <style>
+      body {
+        margin: 0;
+        min-height: 100dvh;
+        display: grid;
+        place-items: center;
+        background: #14161a;
+        color: #e8eaed;
+        font: 16px/1.6 system-ui, sans-serif;
+        text-align: center;
+      }
+      a {
+        color: inherit;
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <p>aka now lives at <a href="https://aka.jmatsu.dev/">aka.jmatsu.dev</a>.</p>
+    </main>
+    <script>
+      // This site was served under the repository name, so everything after
+      // that prefix is the part worth carrying over to the new origin.
+      const base = '/aka/'
+      const { pathname, search, hash } = location
+      const rest = pathname.startsWith(base) ? pathname.slice(base.length) : ''
+      location.replace(`https://aka.jmatsu.dev/${rest}${search}${hash}`)
+    </script>
+  </body>
+</html>

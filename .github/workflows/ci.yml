@@ -1,4 +1,7 @@
-# Build, lint, test and format, then publish the result to GitHub Pages.
+# Build, lint, test and format, and keep the GitHub Pages redirect published.
+#
+# The app itself is deployed by deploy-pages-cloudflare.yml; GitHub Pages now
+# serves only the page that sends its old URL on to aka.jmatsu.dev.
 #
 # Jobs are split by toolchain, not by check, so nothing is installed twice:
 # `web` needs only Node, `crate` only Rust, and `build` needs both. Only the
@@ -60,10 +63,6 @@ jobs:
   build:
     name: Typecheck, test & build
     runs-on: ubuntu-latest
-    env:
-      # A project site is served under the repository name, which
-      # `vite.config.ts` takes as `base`. A custom domain would be `/`.
-      AKA_BASE: /${{ github.event.repository.name }}/
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - run: rustup target add wasm32-unknown-unknown
@@ -83,13 +82,11 @@ jobs:
       # The web tests import the bindings the build just generated, and one of
       # them reads `dist/` to hold the bundle to the no-network policy.
       - run: npm run test:web
-      # Uploaded on pull requests too, so a broken bundle shows up before merge.
-      - uses: actions/upload-pages-artifact@fc324d3547104276b827a68afc52ff2a11cc49c9 # v5.0.0
-        with:
-          path: dist
 
+  # jmatsu.github.io/aka/ is where the app used to live, so it stays up as a
+  # redirect to aka.jmatsu.dev rather than 404ing an address people have.
   deploy:
-    name: Deploy to Pages
+    name: Deploy the Pages redirect
     needs: [web, crate, build]
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-slim
@@ -100,5 +97,14 @@ jobs:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
     steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      # GitHub Pages serves 404.html for anything it has no file for, which is
+      # every deep link into the old app -- so the redirect has to be there too.
+      - run: |
+          cp -R .github/workflows/gh-pages-redirect site
+          cp site/index.html site/404.html
+      - uses: actions/upload-pages-artifact@fc324d3547104276b827a68afc52ff2a11cc49c9 # v5.0.0
+        with:
+          path: site
       - id: deployment
         uses: actions/deploy-pages@cd2ce8fcbc39b97be8ca5fce6e763baed58fa128 # v5.0.0
