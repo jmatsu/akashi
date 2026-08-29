@@ -13,6 +13,7 @@
 mod lzw;
 mod palette;
 
+use lzw::Lzw;
 use palette::{Histogram, MAX_COLORS, Palette};
 use wasm_bindgen::prelude::*;
 
@@ -42,6 +43,8 @@ pub struct GifEncoder {
     transparent: u8,
     /// The previous frame's indices, which the next frame is diffed against.
     previous: Vec<u8>,
+    /// The compressor, kept so its dictionary is not rebuilt for every frame.
+    lzw: Lzw,
     frames: u32,
     out: Vec<u8>,
 }
@@ -61,6 +64,7 @@ impl GifEncoder {
             palette: None,
             transparent: 0,
             previous: Vec::new(),
+            lzw: Lzw::new(),
             frames: 0,
             out: Vec::new(),
         }
@@ -207,7 +211,7 @@ impl GifEncoder {
         self.out.push(0x00);
 
         self.out.push(MIN_CODE_SIZE);
-        for block in lzw::encode(pixels, MIN_CODE_SIZE).chunks(BLOCK_MAX) {
+        for block in self.lzw.encode(pixels, MIN_CODE_SIZE).chunks(BLOCK_MAX) {
             self.out.push(block.len() as u8);
             self.out.extend_from_slice(block);
         }

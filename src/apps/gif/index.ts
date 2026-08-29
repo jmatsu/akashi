@@ -1,9 +1,12 @@
-import { download, must, toast } from '../../dom'
+import { download, must, onFileDropped, onFilePasted, onFilePicked, toast, wireActions } from '../../dom'
 import { baseName, fileName } from '../../filename'
 import { onLocaleChange, t } from '../../i18n'
+import { isShowing } from '../../router'
+import { wasmReady } from '../../wasm'
 import { GifWriter } from './encoder'
-import { estimateBytes, formatBytes, formatTime, outputSize, paletteTimes, plan } from './plan'
-import { grab, loadClip, seek } from './video'
+import { actualFps, estimateBytes, formatBytes, formatTime, outputSize, paletteTimes, plan } from './plan'
+import type { Plan } from './plan'
+import { framesAt, loadClip, seek } from './video'
 import type { Clip } from './video'
 
 /**
@@ -56,28 +59,15 @@ function refresh(): void {
 }
 
 function showing(): boolean {
-  return !must<HTMLElement>('#panel-gif').hidden
+  return isShowing('gif')
 }
 
 // --- header ------------------------------------------------------------
 
 function wireHeader(): void {
   const file = must<HTMLInputElement>('#video-file')
-  const actions: Record<string, () => void> = {
-    open: () => file.click(),
-    save: () => save(),
-  }
-  for (const button of document.querySelectorAll<HTMLButtonElement>('[data-gif]')) {
-    const act = actions[button.dataset.gif ?? '']
-    if (act) button.addEventListener('click', act)
-  }
-
-  file.addEventListener('change', () => {
-    const chosen = file.files?.[0]
-    if (chosen) void open(chosen)
-    // Reset so picking the same file twice still fires `change`.
-    file.value = ''
-  })
+  wireActions('data-gif', { open: () => file.click(), save })
+  onFilePicked(file, (chosen) => void open(chosen))
 
   const name = must<HTMLInputElement>('#gif-name')
   name.addEventListener('keydown', (e) => {
@@ -107,7 +97,7 @@ function wireControls(): void {
     const time = Number(moved.value)
     const limit = keepBefore ? time + MIN_RANGE : time - MIN_RANGE
     if (keepBefore ? Number(other.value) < limit : Number(other.value) > limit) {
-      other.value = String(clamp(limit, 0, loaded?.clip.duration ?? 0))
+      other.value = String(Math.min(Math.max(limit, 0), loaded?.clip.duration ?? 0))
     }
     video.pause()
     void seek(video, time)
@@ -129,21 +119,29 @@ function wireControls(): void {
   })
 }
 
-/** Everything the user set, read back off the controls. */
-function settings(): {
+interface Conversion {
   start: number
   end: number
-  fps: number
-  width: number
+  frames: Plan
+  size: { width: number; height: number }
   loop: boolean
   dither: boolean
-} {
+}
+
+/**
+ * What the controls currently ask for. Both the summary on screen and the
+ * conversion itself read it from here, so the estimate always describes the
+ * GIF that pressing Convert would actually produce.
+ */
+function conversion(clip: Clip): Conversion {
   const value = (selector: string): number => Number(must<HTMLInputElement>(selector).value)
+  const start = value('#trim-start')
+  const end = value('#trim-end')
   return {
-    start: value('#trim-start'),
-    end: value('#trim-end'),
-    fps: value('#fps'),
-    width: value('#gif-width'),
+    start,
+    end,
+    frames: plan(start, end, value('#fps')),
+    size: outputSize(clip.width, clip.height, value('#gif-width')),
     loop: must<HTMLInputElement>('#loop').checked,
     dither: must<HTMLInputElement>('#dither').checked,
   }
@@ -159,15 +157,13 @@ function describe(): void {
     return
   }
 
-  const { start, end, fps, width, dither } = settings()
-  const frames = plan(start, end, fps)
-  const size = outputSize(loaded.clip.width, loaded.clip.height, width)
+  const { start, end, frames, size, dither } = conversion(loaded.clip)
   range.textContent = `${formatTime(start)} – ${formatTime(end)}`
   summary.textContent = t('gif.summary', {
     count: frames.times.length,
     width: size.width,
     height: size.height,
-    fps: Math.round(frames.fps),
+    fps: actualFps(frames),
     // Dithering costs perhaps a third again in size; it is the one setting
     // whose effect the estimate would otherwise hide.
     size: formatBytes(estimateBytes(frames.times.length, size.width, size.height) * (dither ? 1.3 : 1)),
@@ -188,11 +184,12 @@ async function open(source: Blob): Promise<void> {
       throw new Error('aka: nothing to convert')
     loaded = { clip, name: source instanceof File ? baseName(source.name) : null }
 
-    for (const id of ['#trim-start', '#trim-end']) {
-      const control = must<HTMLInputElement>(id)
-      control.max = String(clip.duration)
-      control.value = id === '#trim-start' ? '0' : String(clip.duration)
-    }
+    const start = must<HTMLInputElement>('#trim-start')
+    const end = must<HTMLInputElement>('#trim-end')
+    start.max = String(clip.duration)
+    end.max = String(clip.duration)
+    start.value = '0'
+    end.value = String(clip.duration)
     must<HTMLInputElement>('#gif-name').value = loaded.name ?? ''
     must<HTMLElement>('#panel-gif').classList.add('has-clip')
     clearResult()
@@ -215,9 +212,7 @@ async function open(source: Blob): Promise<void> {
 
 async function convert(): Promise<void> {
   if (loaded === null) return
-  const { start, end, fps, width, loop, dither } = settings()
-  const frames = plan(start, end, fps)
-  const size = outputSize(loaded.clip.width, loaded.clip.height, width)
+  const { frames, size, loop, dither } = conversion(loaded.clip)
 
   const canvas = document.createElement('canvas')
   canvas.width = size.width
@@ -229,7 +224,6 @@ async function convert(): Promise<void> {
     return
   }
 
-  const writer = new GifWriter({ ...size, delayCs: frames.delayCs, loop, dither })
   const running = { live: true }
   job = running
   video.pause()
@@ -237,23 +231,28 @@ async function convert(): Promise<void> {
   enable(false)
   converting(true)
 
+  // The core encodes; nothing has needed it until now.
+  await wasmReady()
+  const writer = new GifWriter({ ...size, delayCs: frames.delayCs, loop, dither })
   try {
     const samples = paletteTimes(frames.times)
-    for (const [i, time] of samples.entries()) {
+    let sampled = 0
+    for await (const frame of framesAt(video, ctx, samples)) {
       if (!running.live) return
-      await seek(video, time)
-      writer.sample(grab(video, ctx))
-      progress((i + 1) / samples.length, t('gif.sampling'))
+      writer.sample(frame)
+      progress(++sampled / samples.length, t('gif.sampling'))
     }
 
-    for (const [i, time] of frames.times.entries()) {
+    const total = frames.times.length
+    let done = 0
+    for await (const frame of framesAt(video, ctx, frames.times)) {
       if (!running.live) return
-      await seek(video, time)
-      writer.addFrame(grab(video, ctx))
-      progress((i + 1) / frames.times.length, t('gif.progress', { done: i + 1, total: frames.times.length }))
+      writer.addFrame(frame)
+      done += 1
+      progress(done / total, t('gif.progress', { done, total }))
     }
 
-    show(writer.finish(), size, frames.times.length)
+    show(writer.finish(), size, total)
   } catch {
     toast(t('toast.gifFailed'))
   } finally {
@@ -302,29 +301,7 @@ function clearResult(): void {
 // --- input -------------------------------------------------------------
 
 function wireInput(): void {
-  const stage = must<HTMLElement>('#clip')
-  stage.addEventListener('dragover', (e) => {
-    e.preventDefault()
-    stage.classList.add('dropping')
-  })
-  stage.addEventListener('dragleave', () => stage.classList.remove('dropping'))
-  stage.addEventListener('drop', (e) => {
-    e.preventDefault()
-    stage.classList.remove('dropping')
-    const file = e.dataTransfer?.files?.[0]
-    if (file?.type.startsWith('video/')) void open(file)
-  })
-
-  window.addEventListener('paste', (e) => {
-    if (!showing()) return
-    const item = [...(e.clipboardData?.items ?? [])].find((i) => i.type.startsWith('video/'))
-    const file = item?.getAsFile()
-    if (!file) return
-    e.preventDefault()
-    void open(file)
-  })
-}
-
-function clamp(value: number, low: number, high: number): number {
-  return Math.min(Math.max(value, low), high)
+  const take = (file: File): void => void open(file)
+  onFileDropped(must<HTMLElement>('#clip'), 'video/', take)
+  onFilePasted('video/', showing, take)
 }

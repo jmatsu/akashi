@@ -27,8 +27,6 @@ export interface Plan {
   times: number[]
   /** How long each frame is shown, in centiseconds. */
   delayCs: number
-  /** What that works out to, which is not the asked-for rate once clamped. */
-  fps: number
 }
 
 /**
@@ -36,15 +34,20 @@ export interface Plan {
  * an even split lands the last frame exactly on `end`, which is one moment
  * past what a video will seek to.
  */
-export function plan(start: number, end: number, fps: number, maxFrames = MAX_FRAMES): Plan {
+export function plan(start: number, end: number, fps: number): Plan {
   const duration = Math.max(0, end - start)
-  const count = Math.min(Math.max(1, Math.round(duration * fps)), Math.max(1, maxFrames))
+  const count = Math.min(Math.max(1, Math.round(duration * fps)), MAX_FRAMES)
   const slot = duration / count
   const times = Array.from({ length: count }, (_, i) => start + slot * (i + 0.5))
   // The delay follows the frames rather than the request, so a clip clamped to
-  // `maxFrames` still runs for as long as the trim says.
+  // `MAX_FRAMES` still runs for as long as the trim says.
   const delayCs = Math.max(MIN_DELAY_CS, Math.round(slot * 100))
-  return { times, delayCs, fps: 100 / delayCs }
+  return { times, delayCs }
+}
+
+/** The rate a plan actually runs at, which is not the rate asked for once clamped. */
+export function actualFps(plan: Plan): number {
+  return Math.round(100 / plan.delayCs)
 }
 
 /** The moments the palette is sampled at: `count` of them, evenly spread. */

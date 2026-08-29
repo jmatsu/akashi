@@ -70,24 +70,30 @@ impl Histogram {
             return Palette::new(vec![[0, 0, 0]]);
         }
 
-        let mut boxes = vec![(0usize, entries.len())];
+        // Each box carries what it would gain from being split, worked out
+        // when the box is made: splitting one changes no other box's, so
+        // re-deriving them all on every one of 255 rounds is 255 passes over
+        // every colour in the clip for two numbers that moved.
+        let mut boxes = vec![ColorBox::new(0, entries.len(), &entries)];
         while boxes.len() < max_colors.max(1) {
-            let splittable = (0..boxes.len())
-                .filter(|&i| boxes[i].1 - boxes[i].0 > 1)
-                .max_by_key(|&i| priority(&entries[boxes[i].0..boxes[i].1]));
-            let Some(pick) = splittable else { break };
+            let splittable = boxes
+                .iter()
+                .enumerate()
+                .filter(|(_, span)| span.end - span.start > 1)
+                .max_by_key(|(_, span)| span.priority);
+            let Some(pick) = splittable.map(|(i, _)| i) else { break };
 
-            let (start, end) = boxes[pick];
+            let (start, end) = (boxes[pick].start, boxes[pick].end);
             let span = &mut entries[start..end];
             let channel = widest_channel(span);
             span.sort_unstable_by_key(|entry| entry.rgb[channel]);
 
             let mid = start + split_at(span);
-            boxes[pick] = (start, mid);
-            boxes.push((mid, end));
+            boxes[pick] = ColorBox::new(start, mid, &entries);
+            boxes.push(ColorBox::new(mid, end, &entries));
         }
 
-        Palette::new(boxes.iter().map(|&(s, e)| mean(&entries[s..e])).collect())
+        Palette::new(boxes.iter().map(|span| mean(&entries[span.start..span.end])).collect())
     }
 
     fn entries(&self) -> Vec<Entry> {
@@ -106,12 +112,21 @@ impl Histogram {
     }
 }
 
-/// How much a box stands to gain from being split: its colour spread weighted
-/// by how many pixels sit in it, so a wide box nobody looks at loses to a busy
-/// one.
-fn priority(span: &[Entry]) -> u64 {
-    let count: u64 = span.iter().map(|entry| entry.count).sum();
-    u64::from(channel_range(span, widest_channel(span))) * count
+/// A run of the sorted entries, and how much it stands to gain from being
+/// split: its colour spread weighted by how many pixels sit in it, so a wide
+/// box nobody looks at loses to a busy one.
+struct ColorBox {
+    start: usize,
+    end: usize,
+    priority: u64,
+}
+
+impl ColorBox {
+    fn new(start: usize, end: usize, entries: &[Entry]) -> ColorBox {
+        let span = &entries[start..end];
+        let count: u64 = span.iter().map(|entry| entry.count).sum();
+        ColorBox { start, end, priority: u64::from(channel_range(span, widest_channel(span))) * count }
+    }
 }
 
 fn widest_channel(span: &[Entry]) -> usize {

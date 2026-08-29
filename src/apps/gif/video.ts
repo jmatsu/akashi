@@ -62,10 +62,35 @@ export function seek(video: HTMLVideoElement, time: number): Promise<void> {
 }
 
 /**
- * The frame currently displayed, scaled to the output size. The canvas is the
- * caller's, so a conversion reuses one rather than allocating per frame.
+ * The frames at `times`, in order, each scaled to the size of `ctx`'s canvas.
+ *
+ * The seek for the next frame is issued before the current one is handed over,
+ * so the browser decodes while the caller encodes: the two halves of a
+ * conversion are otherwise strictly alternating idleness. `getImageData` has
+ * already copied the pixels by then, so the video is free to move on.
  */
-export function grab(video: HTMLVideoElement, ctx: CanvasRenderingContext2D): ImageData {
+export async function* framesAt(
+  video: HTMLVideoElement,
+  ctx: CanvasRenderingContext2D,
+  times: readonly number[],
+): AsyncGenerator<ImageData> {
+  if (times.length === 0) return
+  let pending = seek(video, times[0])
+  try {
+    for (let i = 0; i < times.length; i += 1) {
+      await pending
+      const frame = grab(video, ctx)
+      pending = i + 1 < times.length ? seek(video, times[i + 1]) : Promise.resolve()
+      yield frame
+    }
+  } finally {
+    // Abandoned when the caller stops early; nobody is left to hear it fail.
+    void pending.catch(() => {})
+  }
+}
+
+/** The frame currently displayed, scaled to the output size. */
+function grab(video: HTMLVideoElement, ctx: CanvasRenderingContext2D): ImageData {
   const { width, height } = ctx.canvas
   ctx.drawImage(video, 0, 0, width, height)
   return ctx.getImageData(0, 0, width, height)
@@ -79,20 +104,25 @@ export function grab(video: HTMLVideoElement, ctx: CanvasRenderingContext2D): Im
  */
 function once(video: HTMLVideoElement, event: 'loadeddata' | 'seeked'): Promise<void> {
   return new Promise((resolve, reject) => {
-    const done =
-      (fn: () => void): (() => void) =>
-      () => {
-        video.removeEventListener(event, settle)
-        video.removeEventListener('error', fail)
-        window.clearTimeout(timer)
-        fn()
-      }
-    const settle = done(resolve)
-    const fail = done(() => reject(new Error(`aka: the video could not be read (${event})`)))
-    const timer = window.setTimeout(
-      done(() => (event === 'seeked' ? resolve() : reject(new Error('aka: the video did not load')))),
-      SEEK_TIMEOUT_MS,
-    )
+    const cleanup = (): void => {
+      video.removeEventListener(event, settle)
+      video.removeEventListener('error', fail)
+      window.clearTimeout(timer)
+    }
+    const settle = (): void => {
+      cleanup()
+      resolve()
+    }
+    const fail = (): void => {
+      cleanup()
+      reject(new Error(`aka: the video could not be read (${event})`))
+    }
+    const timer = window.setTimeout(() => {
+      cleanup()
+      if (event === 'seeked') resolve()
+      else reject(new Error('aka: the video did not load'))
+    }, SEEK_TIMEOUT_MS)
+
     video.addEventListener(event, settle, { once: true })
     video.addEventListener('error', fail, { once: true })
   })

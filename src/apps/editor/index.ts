@@ -1,6 +1,8 @@
-import { download, must, toast } from '../../dom'
+import { download, must, onFileDropped, onFilePasted, onFilePicked, toast, wireActions } from '../../dom'
 import { baseName, fileName } from '../../filename'
 import { t } from '../../i18n'
+import { isShowing } from '../../router'
+import { wasmReady } from '../../wasm'
 import { DRAFT_EXT, PROBE_BYTES, decodeDraft, encodeDraft, mayCarryDraft } from './draft'
 import { Editor } from './editor'
 import { buildUI, TOOLS } from './ui'
@@ -14,18 +16,23 @@ import { buildUI, TOOLS } from './ui'
  * that this app is the one on screen, since the other app shares the window.
  */
 
-export function mount(): void {
+export async function mount(): Promise<void> {
   const stage = must<HTMLElement>('#stage')
   const editor = new Editor({ stage, canvas: must<HTMLCanvasElement>('#canvas') })
   buildUI(editor, { tools: must<HTMLElement>('#tools'), options: must<HTMLElement>('#options') })
   wireHeader(editor)
   wireInput(editor)
   wireKeyboard(editor)
+
+  // Redactions are rendered by the wasm core, so the first document is not put
+  // up until it is there: a half-initialised editor could show unredacted
+  // pixels.
+  await wasmReady()
   editor.newDoc()
 }
 
 function showing(): boolean {
-  return !must<HTMLElement>('#panel-editor').hidden
+  return isShowing('editor')
 }
 
 // --- header ------------------------------------------------------------
@@ -54,10 +61,7 @@ function wireHeader(editor: Editor): void {
     save: () => void savePng(editor),
   }
 
-  for (const button of document.querySelectorAll<HTMLButtonElement>('[data-act]')) {
-    const act = actions[button.dataset.act ?? '']
-    if (act) button.addEventListener('click', act)
-  }
+  wireActions('data-act', actions)
 
   name.addEventListener('input', () => editor.setName(name.value))
   // Enter has nothing to submit, so it hands the focus -- and the tool
@@ -66,12 +70,7 @@ function wireHeader(editor: Editor): void {
     if (e.key === 'Enter') name.blur()
   })
 
-  file.addEventListener('change', () => {
-    const chosen = file.files?.[0]
-    if (chosen) void openFile(editor, chosen)
-    // Reset so picking the same file twice still fires `change`.
-    file.value = ''
-  })
+  onFilePicked(file, (chosen) => void openFile(editor, chosen))
 
   editor.onChange(() => {
     // Opening a document renames the field, but not under someone typing in
@@ -200,27 +199,11 @@ async function copyPng(editor: Editor): Promise<void> {
 // --- input -------------------------------------------------------------
 
 function wireInput(editor: Editor): void {
-  window.addEventListener('paste', (e) => {
-    if (!showing()) return
-    const item = [...(e.clipboardData?.items ?? [])].find((i) => i.type.startsWith('image/'))
-    const blob = item?.getAsFile()
-    if (!blob) return
-    e.preventDefault()
-    if (confirmDiscard(editor)) void openFile(editor, blob)
-  })
-
-  const stage = must<HTMLElement>('#stage')
-  stage.addEventListener('dragover', (e) => {
-    e.preventDefault()
-    stage.classList.add('dropping')
-  })
-  stage.addEventListener('dragleave', () => stage.classList.remove('dropping'))
-  stage.addEventListener('drop', (e) => {
-    e.preventDefault()
-    stage.classList.remove('dropping')
-    const blob = e.dataTransfer?.files?.[0]
-    if (blob?.type.startsWith('image/') && confirmDiscard(editor)) void openFile(editor, blob)
-  })
+  const open = (file: File): void => {
+    if (confirmDiscard(editor)) void openFile(editor, file)
+  }
+  onFilePasted('image/', showing, open)
+  onFileDropped(must<HTMLElement>('#stage'), 'image/', open)
 
   // Double-click reopens the inline editor on an existing text object.
   must<HTMLCanvasElement>('#canvas').addEventListener('dblclick', () => {

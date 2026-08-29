@@ -16,6 +16,14 @@ const mounted = new Map<AppId, AppModule>()
 
 let current: AppId | null = null
 
+/**
+ * Which app is on screen. The apps ask, rather than reading the `hidden`
+ * attributes back, so that how an app is hidden stays the router's business.
+ */
+export function isShowing(id: AppId): boolean {
+  return current === id
+}
+
 export async function startRouter(): Promise<void> {
   buildSwitcher()
 
@@ -30,14 +38,6 @@ export async function startRouter(): Promise<void> {
 
 function buildSwitcher(): void {
   const nav = must<HTMLElement>('#apps')
-  const label = (spec: (typeof APPS)[number], button: HTMLButtonElement): (() => void) => {
-    const text = must<HTMLElement>('.app-label', button)
-    return () => {
-      text.textContent = t(spec.label)
-      button.title = t(spec.label)
-    }
-  }
-
   const relabel: (() => void)[] = []
   for (const spec of APPS) {
     const button = document.createElement('button')
@@ -47,7 +47,12 @@ function buildSwitcher(): void {
     button.innerHTML = `${spec.icon}<span class="app-label"></span>`
     button.addEventListener('click', () => void switchTo(spec.id))
     nav.appendChild(button)
-    relabel.push(label(spec, button))
+
+    const label = must<HTMLElement>('.app-label', button)
+    relabel.push(() => {
+      label.textContent = t(spec.label)
+      button.title = t(spec.label)
+    })
   }
 
   for (const fn of relabel) fn()

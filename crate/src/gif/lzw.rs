@@ -8,57 +8,84 @@ const MAX_WIDTH: u32 = 12;
 /// No entry: a real code can be 0, so absence needs a value of its own.
 const NONE: u16 = u16::MAX;
 
-/// Compress `data` (one palette index per byte) into a GIF code stream. The
-/// caller writes the leading minimum-code-size byte and cuts the result into
-/// sub-blocks.
-pub fn encode(data: &[u8], min_code_size: u8) -> Vec<u8> {
-    let clear = 1u16 << min_code_size;
-    let end = clear + 1;
-    let start_width = min_code_size as u32 + 1;
+/// The dictionary, kept across frames.
+///
+/// It is a flat 2MB table rather than a hash, so every lookup is a single
+/// index -- which is worth having only if the table is not rebuilt constantly.
+/// A busy frame fills and resets it dozens of times, so the slots written
+/// since the last reset are recorded and only those are cleared: a few
+/// thousand entries rather than a megabyte, per reset and per frame.
+pub struct Lzw {
+    table: Vec<u16>,
+    written: Vec<u32>,
+}
 
-    let mut out = BitWriter::default();
-    let mut width = start_width;
-    out.write(clear, width);
-
-    let Some((&first, rest)) = data.split_first() else {
-        out.write(end, width);
-        return out.finish();
-    };
-
-    // Flat rather than hashed: 2MB, and every lookup is a single index.
-    let mut table = vec![NONE; MAX_CODES as usize * 256];
-    let mut next = end + 1;
-    let mut prefix = u16::from(first);
-
-    for &byte in rest {
-        let slot = prefix as usize * 256 + byte as usize;
-        if table[slot] != NONE {
-            prefix = table[slot];
-            continue;
-        }
-        out.write(prefix, width);
-        if next < MAX_CODES {
-            table[slot] = next;
-            next += 1;
-            // A decoder learns each entry one code later than the encoder
-            // writes it, so the width grows one code later than the dictionary
-            // outgrows it: the code just assigned is emitted at the new width
-            // at the earliest.
-            if u32::from(next) == (1 << width) + 1 && width < MAX_WIDTH {
-                width += 1;
-            }
-        } else {
-            out.write(clear, width);
-            table.fill(NONE);
-            next = end + 1;
-            width = start_width;
-        }
-        prefix = u16::from(byte);
+impl Lzw {
+    pub fn new() -> Lzw {
+        Lzw { table: vec![NONE; MAX_CODES as usize * 256], written: Vec::new() }
     }
 
-    out.write(prefix, width);
-    out.write(end, width);
-    out.finish()
+    /// Compress `data` (one palette index per byte) into a GIF code stream.
+    /// The caller writes the leading minimum-code-size byte and cuts the
+    /// result into sub-blocks.
+    pub fn encode(&mut self, data: &[u8], min_code_size: u8) -> Vec<u8> {
+        let clear = 1u16 << min_code_size;
+        let end = clear + 1;
+        let start_width = min_code_size as u32 + 1;
+
+        let mut out = BitWriter::default();
+        let mut width = start_width;
+        out.write(clear, width);
+
+        let Some((&first, rest)) = data.split_first() else {
+            out.write(end, width);
+            return out.finish();
+        };
+
+        let table = &mut self.table;
+        let written = &mut self.written;
+        for &slot in written.iter() {
+            table[slot as usize] = NONE;
+        }
+        written.clear();
+
+        let mut next = end + 1;
+        let mut prefix = u16::from(first);
+
+        for &byte in rest {
+            let slot = prefix as usize * 256 + byte as usize;
+            if table[slot] != NONE {
+                prefix = table[slot];
+                continue;
+            }
+            out.write(prefix, width);
+            if next < MAX_CODES {
+                table[slot] = next;
+                written.push(slot as u32);
+                next += 1;
+                // A decoder learns each entry one code later than the encoder
+                // writes it, so the width grows one code later than the
+                // dictionary outgrows it: the code just assigned is emitted at
+                // the new width at the earliest.
+                if u32::from(next) == (1 << width) + 1 && width < MAX_WIDTH {
+                    width += 1;
+                }
+            } else {
+                out.write(clear, width);
+                for &slot in written.iter() {
+                    table[slot as usize] = NONE;
+                }
+                written.clear();
+                next = end + 1;
+                width = start_width;
+            }
+            prefix = u16::from(byte);
+        }
+
+        out.write(prefix, width);
+        out.write(end, width);
+        out.finish()
+    }
 }
 
 #[derive(Default)]
@@ -166,7 +193,7 @@ mod tests {
     }
 
     fn round_trip(data: &[u8]) {
-        assert_eq!(decode(&encode(data, 8), 8), data);
+        assert_eq!(decode(&Lzw::new().encode(data, 8), 8), data);
     }
 
     #[test]
@@ -207,11 +234,24 @@ mod tests {
     #[test]
     fn a_narrow_code_size_round_trips() {
         let data: Vec<u8> = (0..3000).map(|i| (i % 4) as u8).collect();
-        assert_eq!(decode(&encode(&data, 2), 2), data);
+        assert_eq!(decode(&Lzw::new().encode(&data, 2), 2), data);
     }
 
     #[test]
     fn a_run_compresses() {
-        assert!(encode(&[3; 4096], 8).len() < 200);
+        assert!(Lzw::new().encode(&[3; 4096], 8).len() < 200);
+    }
+
+    /// The dictionary is reused between frames, so a stale entry would show up
+    /// as a stream the decoder reads back as the wrong pixels.
+    #[test]
+    fn a_reused_encoder_gives_the_same_stream_as_a_fresh_one() {
+        let first: Vec<u8> = (0..9000).map(|i| (i % 17) as u8).collect();
+        let second: Vec<u8> = (0..9000).map(|i| (i % 5 + i % 31) as u8).collect();
+
+        let mut reused = Lzw::new();
+        reused.encode(&first, 8);
+        assert_eq!(reused.encode(&second, 8), Lzw::new().encode(&second, 8));
+        assert_eq!(decode(&reused.encode(&first, 8), 8), first);
     }
 }

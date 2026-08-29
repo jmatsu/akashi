@@ -1,5 +1,5 @@
 import { GifEncoder } from '../../wasm/aka_core.js'
-import { requireWasm } from '../../wasm.ts'
+import { pixels, requireWasm } from '../../wasm.ts'
 
 /**
  * The JS side of the GIF encoder in `crate/src/gif.rs`.
@@ -22,7 +22,7 @@ export class GifWriter {
   private encoder: GifEncoder
   private done = false
 
-  constructor(private readonly options: GifOptions) {
+  constructor(options: GifOptions) {
     requireWasm('GifWriter')
     this.encoder = new GifEncoder(
       options.width,
@@ -35,11 +35,13 @@ export class GifWriter {
 
   /** Count a frame's colours towards the palette, before any is added. */
   sample(frame: ImageData): void {
-    if (!this.encoder.sample(bytes(frame))) throw new Error('aka: frame is not the size the GIF declared')
+    if (!this.encoder.sample(pixels(frame))) throw new Error('aka: frame is not the size the GIF declared')
   }
 
   addFrame(frame: ImageData): void {
-    if (!this.encoder.add_frame(bytes(frame))) throw new Error('aka: frame is not the size the GIF declared')
+    if (!this.encoder.add_frame(pixels(frame))) {
+      throw new Error('aka: frame is not the size the GIF declared')
+    }
   }
 
   /** Close the file. The writer holds nothing afterwards. */
@@ -57,17 +59,4 @@ export class GifWriter {
     this.done = true
     this.encoder.free()
   }
-
-  get frames(): number {
-    return this.done ? 0 : this.encoder.frames()
-  }
-
-  get size(): { width: number; height: number } {
-    return { width: this.options.width, height: this.options.height }
-  }
-}
-
-/** The bytes wasm reads, aliasing the frame rather than copying it here. */
-function bytes(frame: ImageData): Uint8Array {
-  return new Uint8Array(frame.data.buffer, frame.data.byteOffset, frame.data.byteLength)
 }

@@ -1,7 +1,7 @@
 import { apply_region } from '../../wasm/aka_core.js'
 // Named with its extension: Node loads this module in the tests, and `src/wasm`
 // is also the directory the generated bindings live in.
-import { requireWasm } from '../../wasm.ts'
+import { pixels, requireWasm } from '../../wasm.ts'
 import type { RegionMode } from './types'
 
 /**
@@ -22,6 +22,5 @@ export function applyRegion(img: ImageData, mode: RegionMode, strength: number):
   // Rendering before the core is up would drop redactions silently, which is
   // the one failure here that could leak something.
   requireWasm('applyRegion')
-  const view = new Uint8Array(img.data.buffer, img.data.byteOffset, img.data.byteLength)
-  apply_region(view, img.width, img.height, MODE[mode], strength)
+  apply_region(pixels(img), img.width, img.height, MODE[mode], strength)
 }

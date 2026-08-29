@@ -4,6 +4,7 @@ import { readFileSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
 import {
   MAX_FRAMES,
+  actualFps,
   estimateBytes,
   formatBytes,
   formatTime,
@@ -52,6 +53,13 @@ test('the delay follows the frames, so a clip runs for as long as it was trimmed
 test('a frame rate faster than a browser honours is pulled back to one it does', () => {
   // 100 fps would be a 1cs delay, which browsers silently run at a tenth speed.
   assert.equal(plan(0, 1, 100).delayCs, 2)
+  assert.equal(actualFps(plan(0, 1, 100)), 50)
+})
+
+test('the rate reported is the one the frames actually run at', () => {
+  assert.equal(actualFps(plan(0, 2, 10)), 10)
+  // Clamped to MAX_FRAMES over 60s, so 5 fps rather than the 20 asked for.
+  assert.equal(actualFps(plan(0, 60, 20)), 5)
 })
 
 test('an empty or backwards range still yields something to encode', () => {

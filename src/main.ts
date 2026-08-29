@@ -1,26 +1,23 @@
 import { must } from './dom'
 import { LOCALES, initI18n, isLocale, locale, localeName, setLocale } from './i18n'
 import { startRouter } from './router'
-import { initWasm } from './wasm'
+import { wasmReady } from './wasm'
 import './style.css'
 
 /**
- * Boot: settle the language, bring the wasm core up, then hand the page to
- * whichever app the URL asks for (`src/router.ts`). Everything else lives in
- * the app that needs it.
+ * Boot: settle the language, then hand the page to whichever app the URL asks
+ * for (`src/router.ts`). Everything else lives in the app that needs it --
+ * including the wasm core, which is started here only so that it loads
+ * alongside the app's own chunk, and awaited by whichever app needs it.
  */
 async function boot(): Promise<void> {
-  // Nothing below needs wasm, so let it load while the chrome is built.
-  const wasmReady = initWasm()
+  void wasmReady()
 
   // Before anything reads a string, so the chrome is never shown in the wrong
   // language.
   initI18n()
   wireLanguage()
 
-  // Both apps hand pixels to the core -- redactions in one, frames in the
-  // other -- and neither is safe to show half-initialised.
-  await wasmReady
   await startRouter()
 
   must<HTMLElement>('#loading').remove()
