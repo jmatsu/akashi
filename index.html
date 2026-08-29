@@ -35,20 +35,10 @@
   <body>
     <div id="app">
       <header id="topbar">
-        <!-- The mark opens the menu that outranks every app: the product, and
-             how it speaks. Its name is a name, so it is not translated. -->
-        <div class="menu">
-          <button id="brand" class="brand" type="button" popovertarget="menu-app" data-i18n-label="menu.app" data-i18n-title="menu.app" aria-label="Menu" title="Menu">
-            <img src="/favicon.svg" alt="" width="22" height="22" />
-          </button>
-          <div id="menu-app" class="menu-popup" popover>
-            <p class="menu-heading">Akashi</p>
-            <label class="menu-row">
-              <span data-i18n="language.label">Language</span>
-              <!-- Options are the languages' own names, so they are not translated. -->
-              <select id="lang" class="menu-field"></select>
-            </label>
-          </div>
+        <!-- The mark says which product this is and nothing more: what it once
+             opened is on the gear at the other end of the header. -->
+        <div class="brand">
+          <img src="/favicon.svg" alt="Akashi" width="22" height="22" />
         </div>
 
         <!-- Filled in from the registry in `src/apps.ts`. -->
@@ -103,6 +93,25 @@
             <div id="menu-gif-export" class="menu-popup" popover>
               <button type="button" class="menu-item primary" data-gif="save" data-i18n="gif.save" data-i18n-title="gif.saveTitle" disabled>Save GIF</button>
             </div>
+          </div>
+        </div>
+
+        <!-- The menu that outranks every app: the product, and how it speaks.
+             It keeps its corner while the rest of the header scrolls. -->
+        <div class="menu settings">
+          <button id="settings" class="icon-button" type="button" popovertarget="menu-app" data-i18n-label="menu.settings" data-i18n-title="menu.settings" aria-label="Settings" title="Settings">
+            <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" fill="currentColor" fill-rule="evenodd">
+              <path d="M8.7 1.9A10.6 10.6 0 0 1 15.3 1.9L14.4 4.6A7.8 7.8 0 0 1 17.2 6.2L19.1 4.1A10.6 10.6 0 0 1 22.4 9.8L19.6 10.4A7.8 7.8 0 0 1 19.6 13.6L22.4 14.2A10.6 10.6 0 0 1 19.1 19.9L17.2 17.8A7.8 7.8 0 0 1 14.4 19.4L15.3 22.1A10.6 10.6 0 0 1 8.7 22.1L9.6 19.4A7.8 7.8 0 0 1 6.8 17.8L4.9 19.9A10.6 10.6 0 0 1 1.6 14.2L4.4 13.6A7.8 7.8 0 0 1 4.4 10.4L1.6 9.8A10.6 10.6 0 0 1 4.9 4.1L6.8 6.2A7.8 7.8 0 0 1 9.6 4.6ZM12 8.4a3.6 3.6 0 1 0 0 7.2a3.6 3.6 0 1 0 0-7.2Z" />
+            </svg>
+          </button>
+          <div id="menu-app" class="menu-popup" popover>
+            <!-- The product's name is a name, so it is not translated. -->
+            <p class="menu-heading">Akashi</p>
+            <label class="menu-row">
+              <span data-i18n="language.label">Language</span>
+              <!-- Options are the languages' own names, so they are not translated. -->
+              <select id="lang" class="menu-field"></select>
+            </label>
           </div>
         </div>
       </header>

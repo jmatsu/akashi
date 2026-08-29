@@ -13,6 +13,9 @@
   --stage: #101216;
   --radius: 8px;
   --tap: 40px;
+  /* The options bar, at the one height every tool gets. Room for a 26px stamp
+     and the scrollbar under it. */
+  --options: 52px;
 }
 
 * {
@@ -93,12 +96,21 @@ button {
   display: none;
 }
 
-/* The app mark, which is also the button for the menu the whole product --
-   rather than any one app -- hangs off. */
+/* The app mark. It says which product this is; it is not a control. */
 .brand {
   display: flex;
   align-items: center;
   padding: 4px;
+  flex: none;
+}
+
+.icon-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  padding: 0;
   border: 1px solid transparent;
   border-radius: var(--radius);
   background: transparent;
@@ -106,8 +118,18 @@ button {
   flex: none;
 }
 
-.brand:hover {
+.icon-button:hover {
   border-color: var(--line);
+}
+
+/* The gear holds the right corner while the header scrolls under it, so the
+   product's own menu is reachable however far the app's actions run. */
+.settings {
+  position: sticky;
+  right: 0;
+  margin-left: auto;
+  padding-left: 6px;
+  background: var(--panel);
 }
 
 /* --- drop menus --------------------------------------------------------- */
@@ -353,17 +375,27 @@ select.menu-field {
 
 /* --- options ------------------------------------------------------------ */
 
+/* One height, whichever tool is showing: the bar is the edge of the canvas, and
+   a taller set of controls would otherwise resize the stage under the pointer.
+   The height is stated once so that it and the tallest control -- the stamp
+   row, which carries a scrollbar of its own -- are chosen together. Its own
+   scrollbar is hidden, as the header's is: it would appear for some contexts
+   and not others, which is the jump this rule exists to stop. */
 #options {
   grid-area: options;
   display: flex;
   align-items: center;
   gap: 14px;
   padding: 6px 10px;
-  min-height: 46px;
+  height: var(--options);
   background: var(--panel);
   border-top: 1px solid var(--line);
-  overflow-x: auto;
-  scrollbar-width: thin;
+  overflow: auto hidden;
+  scrollbar-width: none;
+}
+
+#options::-webkit-scrollbar {
+  display: none;
 }
 
 @media (min-width: 900px) {
@@ -457,20 +489,23 @@ select.menu-field {
   font-variant-numeric: tabular-nums;
 }
 
+/* Far more stamps than fit, and a wheel will not scroll sideways on its own --
+   so this one keeps its scrollbar, and `--options` is sized around it. */
 .emoji-grid {
   max-width: min(52vw, 460px);
-  overflow-x: auto;
+  overflow: auto hidden;
   scrollbar-width: thin;
+  scrollbar-color: var(--line) transparent;
 }
 
 button.emoji {
-  min-width: 32px;
-  min-height: 32px;
+  min-width: 26px;
+  min-height: 26px;
   padding: 0;
   border: 1px solid transparent;
   border-radius: 6px;
   background: transparent;
-  font-size: 20px;
+  font-size: 18px;
   line-height: 1;
   cursor: pointer;
 }

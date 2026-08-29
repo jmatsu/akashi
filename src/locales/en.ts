@@ -47,8 +47,8 @@ export const en = {
   'language.label': 'Language',
 
   // --- header menus -----------------------------------------------------
-  // What the app mark opens: the product itself, not any one app.
-  'menu.app': 'Menu',
+  // What the gear opens: the product itself, not any one app.
+  'menu.settings': 'Settings',
   'menu.file': 'File',
   'menu.export': 'Export',
 

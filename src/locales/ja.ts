@@ -40,7 +40,7 @@ export const ja: Catalog = {
   'language.label': '言語',
 
   // --- header menus -----------------------------------------------------
-  'menu.app': 'メニュー',
+  'menu.settings': '設定',
   'menu.file': 'ファイル',
   'menu.export': '書き出し',
 
