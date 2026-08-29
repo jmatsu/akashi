@@ -24,7 +24,7 @@ hand it on.
 - Run on Windows, macOS, Linux, Android and iOS.
 - Nothing you open leaves your device. Safe for everyone.
   - Backend-less, no upload, no network request
-- Minimum external dependencies (Currently, zero dependency)
+- Minimum external dependencies
 
 ## Annotate
 
