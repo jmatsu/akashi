@@ -182,8 +182,9 @@ missing or extra key is a compile error.
 
 ## Experiments
 
-The GIF encoder also runs from a shell, behind a Cargo feature the app never
-builds. That and anything else tried outside the browser is in
+The GIF encoder also runs from a shell, and a prototype takes a screenshot off
+an Android phone over Wi-Fi by speaking ADB itself — both behind Cargo features
+the app never builds. That and anything else tried outside the browser is in
 [EXPERIMENT](EXPERIMENT.md).
 
 ## Architecture
@@ -204,6 +205,11 @@ crate/src/gif.rs        Animated GIF: palette, frame differencing, container
 crate/src/gif/palette.rs  Median cut, the colour lookup table, dithering
 crate/src/gif/lzw.rs    The LZW variant GIF compresses with
 crate/src/bin/akashi-gif.rs  The encoder as a CLI, behind the `cli` feature
+crate/src/adb.rs        ADB over TCP/IP: the handshake and one stream at a time
+crate/src/adb/message.rs  The 24-byte packet header every ADB message carries
+crate/src/adb/auth.rs   Signing the daemon's challenge with ~/.android/adbkey
+crate/src/adb/sync.rs   The `sync:` service, and the `RECV` behind `adb pull`
+crate/src/bin/akashi-adb.rs  Screenshots off a phone, behind the `adb` feature
 
 src/main.ts             Boot: language, wasm, router, service worker
 src/apps.ts             The registry, and how a URL names an app (DOM-free)

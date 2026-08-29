@@ -15,14 +15,27 @@ name = "akashi-gif"
 path = "src/bin/akashi-gif.rs"
 required-features = ["cli"]
 
+# A second experiment: the ADB wire protocol spoken straight to a device over
+# TCP/IP, so a screenshot can be taken off a phone without a cable. Behind its
+# own feature for the same reason -- the wasm module carries none of it.
+[[bin]]
+name = "akashi-adb"
+path = "src/bin/akashi-adb.rs"
+required-features = ["adb"]
+
 [features]
 cli = ["dep:clap"]
+adb = ["dep:clap", "dep:rsa"]
 
 [dependencies]
 wasm-bindgen = "0.2"
 # The CLI's only dependency, and the reason it is optional: the library -- and
 # so the wasm module -- never sees it.
 clap = { version = "4", features = ["derive"], optional = true }
+# The ADB experiment's only dependency beyond clap. An auth token is already a
+# digest when it arrives, so the padding is assembled here and the crate is
+# asked for the modular exponentiation and the key file alone.
+rsa = { version = "0.9", features = ["pem"], optional = true }
 
 [profile.release]
 # Pixel loops dominate; favour speed. The resulting module is still ~15KB.

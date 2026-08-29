@@ -8,6 +8,10 @@
 //! Image buffers crossing the boundary are RGBA8, row-major,
 //! `width * height * 4` bytes -- the layout of a canvas `ImageData`.
 
+// An experiment rather than part of the core, and gated so the wasm module --
+// which could not open a socket in the first place -- never sees it.
+#[cfg(feature = "adb")]
+pub mod adb;
 mod gif;
 mod region;
 
