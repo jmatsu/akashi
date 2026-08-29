@@ -39,29 +39,46 @@ button {
 
 /* --- layout ------------------------------------------------------------ */
 
+/* The shell is a header and whichever app is showing; each app lays its own
+   panel out. `[hidden]` is what the router toggles, so every rule that sets a
+   `display` states the hidden case beside it -- an attribute selector is one
+   step more specific, and nothing here needs `!important`. */
 #app {
   display: grid;
   height: 100vh;
   /* biome-ignore lint/suspicious/noDuplicateProperties: the vh above is the fallback for browsers without dvh. */
   height: 100dvh;
-  /* Phones: canvas up top, controls under the thumb. */
-  grid-template-areas: "head" "stage" "options" "tools";
-  grid-template-rows: auto 1fr auto auto;
+  grid-template-rows: auto 1fr;
   padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom)
     env(safe-area-inset-left);
 }
 
+.panel {
+  display: grid;
+  min-height: 0;
+}
+
+.panel[hidden],
+.actions[hidden] {
+  display: none;
+}
+
+#panel-editor {
+  /* Phones: canvas up top, controls under the thumb. */
+  grid-template-areas: "stage" "options" "tools";
+  grid-template-rows: 1fr auto auto;
+}
+
 @media (min-width: 900px) {
-  #app {
+  #panel-editor {
     /* Desktop: a tool rail on the left, options above the canvas. */
-    grid-template-areas: "head head" "tools options" "tools stage";
+    grid-template-areas: "tools options" "tools stage";
     grid-template-columns: auto 1fr;
-    grid-template-rows: auto auto 1fr;
+    grid-template-rows: auto 1fr;
   }
 }
 
 #topbar {
-  grid-area: head;
   display: flex;
   align-items: center;
   gap: 12px;
@@ -91,6 +108,42 @@ button {
   height: 10px;
   border-radius: 50%;
   background: var(--accent);
+}
+
+/* The app switcher: the one control that outranks whatever app is on screen,
+   so it sits in the corner with the brand. */
+#apps {
+  display: flex;
+  gap: 2px;
+  padding: 2px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--bg);
+  flex: none;
+}
+
+.app-tab {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 28px;
+  padding: 0 10px;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.app-tab:hover {
+  color: var(--text);
+}
+
+.app-tab.on {
+  background: var(--panel-hi);
+  color: var(--text);
+  font-weight: 600;
 }
 
 .actions {
@@ -475,4 +528,193 @@ button.emoji.on {
   background: var(--bg);
   color: var(--muted);
   z-index: 20;
+}
+
+/* --- gif converter ------------------------------------------------------ */
+
+#panel-gif {
+  /* Phones: the clip on top, everything you set under it. */
+  grid-template-rows: minmax(120px, 1fr) auto;
+  overflow: hidden;
+}
+
+@media (min-width: 900px) {
+  #panel-gif {
+    grid-template-columns: 1fr minmax(300px, 340px);
+    grid-template-rows: 1fr;
+  }
+}
+
+#clip {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 0;
+  padding: 10px;
+  background: var(--stage);
+}
+
+#clip.dropping {
+  outline: 2px dashed var(--accent);
+  outline-offset: -6px;
+}
+
+#video {
+  max-width: 100%;
+  max-height: 100%;
+  /* Nothing to show until a clip is opened, and an empty player is a puzzle. */
+  display: none;
+}
+
+#clip-hint {
+  max-width: 34ch;
+  color: var(--muted);
+  text-align: center;
+  line-height: 1.7;
+}
+
+#panel-gif.has-clip #video {
+  display: block;
+}
+
+#panel-gif.has-clip #clip-hint {
+  display: none;
+}
+
+#clip-hint kbd {
+  padding: 2px 6px;
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  background: var(--panel-hi);
+  font: inherit;
+}
+
+#gif-controls {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin: 0;
+  padding: 12px;
+  border: 0;
+  background: var(--panel);
+  border-top: 1px solid var(--line);
+  overflow-y: auto;
+}
+
+@media (min-width: 900px) {
+  #gif-controls {
+    border-top: 0;
+    border-left: 1px solid var(--line);
+  }
+}
+
+#gif-controls .group {
+  align-items: flex-start;
+  gap: 10px;
+}
+
+#gif-controls .group-label {
+  min-width: 84px;
+  padding-top: 4px;
+}
+
+#gif-controls select {
+  min-height: 32px;
+  padding: 0 6px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--panel-hi);
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+}
+
+#gif-controls select:disabled,
+#gif-controls input:disabled {
+  opacity: 0.4;
+}
+
+.trim {
+  flex-direction: column;
+  align-items: stretch;
+  gap: 4px;
+  flex: 1;
+}
+
+.trim-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.trim-label {
+  min-width: 44px;
+  color: var(--muted);
+}
+
+.trim-row .range {
+  flex: 1;
+  width: auto;
+}
+
+.readout.wide {
+  min-width: 0;
+  font-variant-numeric: tabular-nums;
+}
+
+.check {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+}
+
+.check input {
+  accent-color: var(--accent);
+  width: 16px;
+  height: 16px;
+}
+
+#convert {
+  min-height: 36px;
+  padding: 0 18px;
+  font-weight: 600;
+}
+
+#convert.busy {
+  background: var(--panel-hi);
+  border-color: var(--muted);
+  color: var(--text);
+}
+
+#gif-progress {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+#gif-progress[hidden] {
+  display: none;
+}
+
+#gif-bar {
+  flex: 1;
+  height: 6px;
+  accent-color: var(--accent);
+}
+
+#gif-output {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  align-items: flex-start;
+}
+
+#gif-result {
+  max-width: 100%;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  /* The chequerboard a transparent frame is read against. */
+  background: repeating-conic-gradient(var(--panel-hi) 0% 25%, var(--panel) 0% 50%) 0 0 / 16px 16px;
 }

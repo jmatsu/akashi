@@ -1,0 +1,279 @@
+import { download, must, toast } from '../../dom'
+import { baseName, fileName } from '../../filename'
+import { t } from '../../i18n'
+import { DRAFT_EXT, PROBE_BYTES, decodeDraft, encodeDraft, mayCarryDraft } from './draft'
+import { Editor } from './editor'
+import { buildUI, TOOLS } from './ui'
+
+/**
+ * The annotation editor: what aka was before it was two apps. Boot wires the
+ * header, the file in and out, and the keyboard; the drawing itself is
+ * `editor.ts`, and the toolbars are `ui.ts`.
+ *
+ * Window-wide handlers -- paste, shortcuts, the unsaved-work prompt -- check
+ * that this app is the one on screen, since the other app shares the window.
+ */
+
+export function mount(): void {
+  const stage = must<HTMLElement>('#stage')
+  const editor = new Editor({ stage, canvas: must<HTMLCanvasElement>('#canvas') })
+  buildUI(editor, { tools: must<HTMLElement>('#tools'), options: must<HTMLElement>('#options') })
+  wireHeader(editor)
+  wireInput(editor)
+  wireKeyboard(editor)
+  editor.newDoc()
+}
+
+function showing(): boolean {
+  return !must<HTMLElement>('#panel-editor').hidden
+}
+
+// --- header ------------------------------------------------------------
+
+function wireHeader(editor: Editor): void {
+  const file = must<HTMLInputElement>('#file')
+  const name = must<HTMLInputElement>('#name')
+  const zoomLabel = must<HTMLElement>('#zoom-label')
+  const undo = must<HTMLButtonElement>('[data-act="undo"]')
+  const redo = must<HTMLButtonElement>('[data-act="redo"]')
+  const stage = must<HTMLElement>('#stage')
+
+  const actions: Record<string, () => void> = {
+    open: () => file.click(),
+    blank: () => {
+      if (confirmDiscard(editor)) editor.newDoc()
+    },
+    clear: () => editor.clearObjects(),
+    undo: () => editor.undo(),
+    redo: () => editor.redo(),
+    zoomin: () => editor.zoomBy(1.25),
+    zoomout: () => editor.zoomBy(1 / 1.25),
+    fit: () => editor.zoomToFit(),
+    copy: () => void copyPng(editor),
+    draft: () => void shareDraft(editor),
+    save: () => void savePng(editor),
+  }
+
+  for (const button of document.querySelectorAll<HTMLButtonElement>('[data-act]')) {
+    const act = actions[button.dataset.act ?? '']
+    if (act) button.addEventListener('click', act)
+  }
+
+  name.addEventListener('input', () => editor.setName(name.value))
+  // Enter has nothing to submit, so it hands the focus -- and the tool
+  // shortcuts -- back.
+  name.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') name.blur()
+  })
+
+  file.addEventListener('change', () => {
+    const chosen = file.files?.[0]
+    if (chosen) void openFile(editor, chosen)
+    // Reset so picking the same file twice still fires `change`.
+    file.value = ''
+  })
+
+  editor.onChange(() => {
+    // Opening a document renames the field, but not under someone typing in
+    // it.
+    if (document.activeElement !== name) name.value = editor.doc.name ?? ''
+    zoomLabel.textContent = `${Math.round(editor.zoom * 100)}%`
+    undo.disabled = !editor.canUndo
+    redo.disabled = !editor.canRedo
+    // The paste/drop hint retires once there is something to look at.
+    stage.classList.toggle('has-content', editor.hasImage() || editor.doc.objects.length > 0)
+  })
+}
+
+function confirmDiscard(editor: Editor): boolean {
+  if (editor.doc.objects.length === 0) return true
+  return window.confirm(t('confirm.discard'))
+}
+
+// --- image in / out ----------------------------------------------------
+
+/**
+ * Open whatever the user handed us: a file, a drop, a paste. A draft carries
+ * its session inside the PNG, so it arrives through the same door with no
+ * import step, and one that will not open still shows as the annotated PNG.
+ */
+async function openFile(editor: Editor, source: Blob): Promise<void> {
+  if (await openDraft(editor, source)) return
+  try {
+    const bitmap = await createImageBitmap(source)
+    // The blob is kept so a draft can carry the original pixels rather than a
+    // re-encode of the annotated ones.
+    editor.setImage(bitmap, bitmap.width, bitmap.height, source, sourceName(source))
+    toast(t('toast.imageLoaded', { width: bitmap.width, height: bitmap.height }))
+  } catch {
+    toast(t('toast.imageFailed'))
+  }
+}
+
+/** Open `source` as a draft, or report that it is not one we could open. */
+async function openDraft(editor: Editor, source: Blob): Promise<boolean> {
+  try {
+    // Only a file that looks like it carries a session is read whole; an
+    // ordinary screenshot is decoded off-thread and never lands in the heap.
+    const head = new Uint8Array(await source.slice(0, PROBE_BYTES).arrayBuffer())
+    if (!mayCarryDraft(head)) return false
+    const draft = decodeDraft(new Uint8Array(await source.arrayBuffer()))
+    if (draft === null) return false
+
+    // An embedded image that will not decode throws, and the caller falls back
+    // to the annotated PNG.
+    const embedded = draft.image
+    let image: { bitmap: ImageBitmap; source: Blob } | null = null
+    if (embedded !== null) {
+      const blob = new Blob([embedded.bytes], { type: embedded.mime })
+      image = { bitmap: await createImageBitmap(blob), source: blob }
+    }
+    editor.restoreDraft(draft.doc, image)
+    toast(t('toast.draftLoaded', { count: draft.doc.objects.length }))
+    return true
+  } catch {
+    return false
+  }
+}
+
+/**
+ * What the image was called where it came from, so the annotated version saves
+ * under the same name. A pasted blob is not a `File` and has nothing to take.
+ */
+function sourceName(source: Blob): string | null {
+  return source instanceof File ? baseName(source.name) : null
+}
+
+/** Save the document as a PNG file. Copy to the clipboard is the other half. */
+async function savePng(editor: Editor): Promise<void> {
+  download(await editor.toBlob(), fileName(editor.doc.name, 'aka', 'png'))
+  toast(t('toast.saved'))
+}
+
+/**
+ * Hand the whole editing session to another device as a `.aka` file (see
+ * `draft.ts`), through the share sheet where there is one and a download
+ * otherwise. Chrome takes the fallback as a rule: it shares only files whose
+ * extension is on a permitted list, and `.aka` is not on it.
+ */
+async function shareDraft(editor: Editor): Promise<void> {
+  const source = editor.sourceImage()
+  // Independent, and the render is the slow half: in series, the read would
+  // wait behind it for nothing.
+  const [flat, bytes] = await Promise.all([
+    editor.toBlob().then((blob) => blob.arrayBuffer()),
+    source?.arrayBuffer(),
+  ])
+  const image =
+    source === null || bytes === undefined
+      ? null
+      : { mime: source.type || 'image/png', bytes: new Uint8Array(bytes) }
+  const parts = encodeDraft(new Uint8Array(flat), { doc: editor.doc, image })
+  // The bytes really are a PNG, and saying so is what lets a receiving app
+  // open the draft at all; only the name sets it apart.
+  const file = new File(parts, fileName(editor.doc.name, 'aka-draft', DRAFT_EXT), { type: 'image/png' })
+
+  if (navigator.canShare?.({ files: [file] })) {
+    try {
+      await navigator.share({ files: [file], title: file.name })
+      return
+    } catch (e) {
+      // Dismissing the sheet is a cancel; anything else falls through to the
+      // download, so a draft is never left with no way out.
+      if (e instanceof DOMException && e.name === 'AbortError') return
+    }
+  }
+  download(file, file.name)
+  toast(t('toast.draftSaved'))
+}
+
+async function copyPng(editor: Editor): Promise<void> {
+  try {
+    const blob = await editor.toBlob()
+    await navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })])
+    toast(t('toast.copied'))
+  } catch {
+    toast(t('toast.copyUnsupported'))
+  }
+}
+
+// --- input -------------------------------------------------------------
+
+function wireInput(editor: Editor): void {
+  window.addEventListener('paste', (e) => {
+    if (!showing()) return
+    const item = [...(e.clipboardData?.items ?? [])].find((i) => i.type.startsWith('image/'))
+    const blob = item?.getAsFile()
+    if (!blob) return
+    e.preventDefault()
+    if (confirmDiscard(editor)) void openFile(editor, blob)
+  })
+
+  const stage = must<HTMLElement>('#stage')
+  stage.addEventListener('dragover', (e) => {
+    e.preventDefault()
+    stage.classList.add('dropping')
+  })
+  stage.addEventListener('dragleave', () => stage.classList.remove('dropping'))
+  stage.addEventListener('drop', (e) => {
+    e.preventDefault()
+    stage.classList.remove('dropping')
+    const blob = e.dataTransfer?.files?.[0]
+    if (blob?.type.startsWith('image/') && confirmDiscard(editor)) void openFile(editor, blob)
+  })
+
+  // Double-click reopens the inline editor on an existing text object.
+  must<HTMLCanvasElement>('#canvas').addEventListener('dblclick', () => {
+    const sel = editor.selected()
+    if (sel?.type === 'text') editor.beginTextEditing(sel)
+  })
+
+  window.addEventListener('beforeunload', (e) => {
+    if (editor.doc.objects.length > 0) e.preventDefault()
+  })
+}
+
+function wireKeyboard(editor: Editor): void {
+  const tools = new Map(TOOLS.map((t) => [t.key, t.id]))
+
+  const withModifier: Record<string, (e: KeyboardEvent) => void> = {
+    z: (e) => (e.shiftKey ? editor.redo() : editor.undo()),
+    y: () => editor.redo(),
+    s: (e) => void (e.shiftKey ? shareDraft(editor) : savePng(editor)),
+    '0': () => editor.zoomToFit(),
+    '1': () => editor.zoomTo(1),
+  }
+
+  window.addEventListener('keydown', (e) => {
+    if (!showing()) return
+    // A focused slider, colour well or name field owns its own keys. (The
+    // inline textarea stops propagation, so it never reaches here.)
+    const inField = e.target instanceof HTMLElement && e.target.matches('input, textarea, select')
+
+    if (e.metaKey || e.ctrlKey) {
+      const key = e.key.toLowerCase()
+      // Saving is the one shortcut a focused field does not swallow: naming a
+      // document and pressing Ctrl/Cmd+S is a single gesture.
+      if (inField && key !== 's') return
+      const action = withModifier[key]
+      if (!action) return
+      e.preventDefault()
+      action(e)
+      return
+    }
+
+    if (inField) return
+
+    if (e.key === 'Delete' || e.key === 'Backspace') {
+      e.preventDefault()
+      editor.deleteSelected()
+      return
+    }
+    if (e.key === 'Escape') {
+      editor.select(null)
+      return
+    }
+    const tool = tools.get(e.key.toLowerCase())
+    if (tool) editor.setTool(tool)
+  })
+}

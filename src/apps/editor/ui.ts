@@ -1,7 +1,7 @@
 import type { Editor } from './editor'
 import { EMOJI } from './emoji'
-import { onLocaleChange, t } from './i18n'
-import type { MessageKey } from './i18n'
+import { onLocaleChange, t } from '../../i18n'
+import type { MessageKey } from '../../i18n'
 import { PALETTE, STYLE_FIELDS } from './types'
 import type { ArrowStyle, ObjType, RegionMode, Settings, ToolId } from './types'
 

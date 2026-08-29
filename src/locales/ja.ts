@@ -4,15 +4,19 @@ import type { Catalog } from './en.ts'
  *  compile error rather than a string that quietly falls back to English. */
 export const ja: Catalog = {
   // --- document head ----------------------------------------------------
-  'app.title': 'aka — 軽量アノテーションツール',
+  'app.title': 'aka — スクリーンショットと画面録画のための軽量ツール',
   'app.description':
-    'スクリーンショットに注釈・モザイク・黒塗りを入れる軽量ツール。インストール不要、オフラインでも動作します。',
+    'スクリーンショットに注釈を入れ、画面録画を GIF に変換する軽量ツール。インストール不要、オフラインでも動作します。',
   'app.loading': '読み込み中…',
 
+  // --- apps -------------------------------------------------------------
+  'app.editor': '注釈',
+  'app.gif': 'GIF',
+
   // --- web manifest -----------------------------------------------------
-  'manifest.name': 'aka - 軽量アノテーションツール',
+  'manifest.name': 'aka - スクリーンショットと画面録画のための軽量ツール',
   'manifest.description':
-    'スクリーンショットにテキスト・図形・矢印・マーカー・絵文字スタンプ・モザイク / 黒塗りを入れられます。オフラインでも動作します。',
+    'スクリーンショットにテキスト・図形・矢印・マーカー・絵文字スタンプ・モザイク / 黒塗りを入れ、画面録画をアニメーション GIF に変換できます。オフラインでも動作します。',
 
   // --- header -----------------------------------------------------------
   'action.open': '画像を開く',
@@ -36,8 +40,10 @@ export const ja: Catalog = {
   'language.label': '言語',
 
   // --- app regions ------------------------------------------------------
+  'region.apps': 'アプリ',
   'region.tools': 'ツール',
   'region.options': 'オプション',
+  'region.gifOptions': '変換オプション',
   'stage.dropHint': '画像をドラッグ＆ドロップ、または <kbd>Ctrl/Cmd</kbd>+<kbd>V</kbd> で貼り付け',
 
   // --- tools ------------------------------------------------------------
@@ -74,6 +80,29 @@ export const ja: Catalog = {
   'hint.canvas':
     'キャンバスをドラッグして移動、ピンチ / Ctrl+ホイールで拡大縮小。オブジェクトをクリックすると編集できます。',
 
+  // --- gif converter ----------------------------------------------------
+  'gif.open': '動画を開く',
+  'gif.save': 'GIF を保存',
+  'gif.saveTitle': '変換した GIF を保存',
+  'gif.dropHint':
+    '<kbd>webm</kbd> / <kbd>mov</kbd> / <kbd>mp4</kbd> をドラッグ＆ドロップ、またはヘッダーから開く',
+  'gif.trim': '範囲',
+  'gif.start': '開始',
+  'gif.end': '終了',
+  'gif.fps': 'フレームレート',
+  'gif.width': '幅',
+  'gif.widthOriginal': '元のまま',
+  'gif.loop': 'ループ',
+  'gif.dither': 'ディザ',
+  'gif.ditherTitle': '色を混ぜて縞を目立たなくします。そのぶんファイルは大きくなります',
+  'gif.convert': '変換',
+  'gif.cancel': '中止',
+  'gif.resultLabel': '変換した GIF',
+  'gif.summary': '{count} フレーム · {width} × {height} · {fps} fps · 約 {size}',
+  'gif.sampling': '色を選んでいます…',
+  'gif.progress': 'フレーム {done} / {total}',
+  'gif.result': '{width} × {height} · {count} フレーム · {size}',
+
   // --- messages ---------------------------------------------------------
   'confirm.discard': '編集中の内容が破棄されます。よろしいですか?',
   'toast.imageLoaded': '{width} × {height} を読み込みました',
@@ -83,4 +112,8 @@ export const ja: Catalog = {
   'toast.copyUnsupported': 'このブラウザではコピーできません。PNG 保存を使ってください',
   'toast.draftLoaded': '下書きを開きました（注釈 {count} 個）',
   'toast.draftSaved': '下書きを保存しました。別の端末で開くと続きから編集できます',
+  'toast.videoLoaded': '{width} × {height}、{duration} を読み込みました',
+  'toast.videoFailed': 'このブラウザではその動画を開けません',
+  'toast.gifSaved': 'GIF を保存しました',
+  'toast.gifFailed': 'この動画は変換できませんでした',
 }

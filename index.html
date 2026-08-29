@@ -4,6 +4,10 @@
   literals below are the default locale (English), so the page reads correctly
   before the module runs and without JavaScript at all. `test/i18n.test.ts`
   holds them to the catalog. `lang` is rewritten to match the active locale.
+
+  One page, two apps. Everything an app owns -- its panel, and its share of the
+  header -- is marked `data-app`, and `src/router.ts` shows one set at a time
+  based on the `app` query parameter. A third app is another pair of blocks.
 -->
 <html lang="en">
   <head>
@@ -12,8 +16,8 @@
       name="viewport"
       content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no"
     />
-    <title data-i18n="app.title">aka — lightweight annotation tool</title>
-    <meta name="description" data-i18n-content="app.description" content="A lightweight tool for annotating, mosaicking and redacting screenshots. No install, works offline." />
+    <title data-i18n="app.title">aka — lightweight screenshot and screen recording tools</title>
+    <meta name="description" data-i18n-content="app.description" content="Lightweight tools for annotating screenshots and turning screen recordings into GIFs. No install, works offline." />
     <!--
       The Content-Security-Policy meta is prepended to this head by
       `vite.config.ts` from `src/csp.ts`: the dev server needs sources the
@@ -32,8 +36,10 @@
     <div id="app">
       <header id="topbar">
         <div class="brand"><span class="dot"></span>aka</div>
+        <!-- Filled in from the registry in `src/apps.ts`. -->
+        <nav id="apps" data-i18n-label="region.apps" aria-label="Apps"></nav>
 
-        <div class="actions">
+        <div class="actions" data-app="editor">
           <button type="button" data-act="open" data-i18n="action.open">Open image</button>
           <button type="button" data-act="blank" data-i18n="action.blank">New</button>
           <span class="sep"></span>
@@ -50,27 +56,110 @@
           <button type="button" data-act="copy" data-i18n="action.copy" data-i18n-title="action.copyTitle">Copy</button>
           <button type="button" data-act="draft" data-i18n="action.draft" data-i18n-title="action.draftTitle" data-shortcut="Ctrl/Cmd+Shift+S">Draft</button>
           <button type="button" data-act="save" class="primary" data-i18n="action.save" data-i18n-title="action.saveTitle" data-shortcut="Ctrl/Cmd+S">Save</button>
+        </div>
+
+        <div class="actions" data-app="gif" hidden>
+          <button type="button" data-gif="open" data-i18n="gif.open">Open video</button>
+          <span class="sep"></span>
+          <input id="gif-name" type="text" spellcheck="false" autocomplete="off" data-i18n-label="name.label" data-i18n-title="name.label" data-i18n-placeholder="name.placeholder" aria-label="Name for saved files" title="Name for saved files" placeholder="aka-<date>" />
+          <button type="button" data-gif="save" class="primary" data-i18n="gif.save" data-i18n-title="gif.saveTitle" disabled>Save GIF</button>
+        </div>
+
+        <div class="actions">
           <span class="sep"></span>
           <!-- Options are the languages' own names, so they are not translated. -->
           <select id="lang" data-i18n-label="language.label" data-i18n-title="language.label" aria-label="Language" title="Language"></select>
         </div>
       </header>
 
-      <nav id="tools" data-i18n-label="region.tools" aria-label="Tools"></nav>
-      <div id="options" role="toolbar" data-i18n-label="region.options" aria-label="Options"></div>
+      <section id="panel-editor" class="panel" data-app="editor">
+        <nav id="tools" data-i18n-label="region.tools" aria-label="Tools"></nav>
+        <div id="options" role="toolbar" data-i18n-label="region.options" aria-label="Options"></div>
 
-      <div id="stage">
-        <canvas id="canvas"></canvas>
-        <p id="drop-hint" data-i18n-html="stage.dropHint">
-          Drag and drop an image, or paste one with <kbd>Ctrl/Cmd</kbd>+<kbd>V</kbd>
-        </p>
-      </div>
+        <div id="stage">
+          <canvas id="canvas"></canvas>
+          <p id="drop-hint" data-i18n-html="stage.dropHint">
+            Drag and drop an image, or paste one with <kbd>Ctrl/Cmd</kbd>+<kbd>V</kbd>
+          </p>
+        </div>
+      </section>
+
+      <section id="panel-gif" class="panel" data-app="gif" hidden>
+        <div id="clip">
+          <video id="video" playsinline muted controls preload="auto"></video>
+          <p id="clip-hint" data-i18n-html="gif.dropHint">
+            Drag and drop a <kbd>webm</kbd>, <kbd>mov</kbd> or <kbd>mp4</kbd>, or open one from the header
+          </p>
+        </div>
+
+        <fieldset id="gif-controls" data-i18n-label="region.gifOptions" aria-label="Conversion options">
+          <div class="group grow">
+            <span class="group-label" data-i18n="gif.trim">Trim</span>
+            <div class="group-body trim">
+              <label class="trim-row">
+                <span class="trim-label" data-i18n="gif.start">Start</span>
+                <input id="trim-start" class="range" type="range" min="0" max="1" step="0.05" value="0" />
+              </label>
+              <label class="trim-row">
+                <span class="trim-label" data-i18n="gif.end">End</span>
+                <input id="trim-end" class="range" type="range" min="0" max="1" step="0.05" value="1" />
+              </label>
+              <span id="trim-readout" class="readout wide"></span>
+            </div>
+          </div>
+
+          <div class="group">
+            <span class="group-label" data-i18n="gif.fps">Frame rate</span>
+            <!-- Frames per second: a number and a unit, the same in any language. -->
+            <select id="fps">
+              <option value="5">5 fps</option>
+              <option value="10" selected>10 fps</option>
+              <option value="15">15 fps</option>
+              <option value="20">20 fps</option>
+              <option value="24">24 fps</option>
+            </select>
+          </div>
+
+          <div class="group">
+            <span class="group-label" data-i18n="gif.width">Width</span>
+            <select id="gif-width">
+              <option value="0" data-i18n="gif.widthOriginal">Original</option>
+              <option value="720">720 px</option>
+              <option value="480" selected>480 px</option>
+              <option value="320">320 px</option>
+              <option value="240">240 px</option>
+            </select>
+          </div>
+
+          <div class="group">
+            <label class="check"><input id="loop" type="checkbox" checked /><span data-i18n="gif.loop">Loop</span></label>
+            <label class="check" data-i18n-title="gif.ditherTitle"><input id="dither" type="checkbox" checked /><span data-i18n="gif.dither">Dither</span></label>
+          </div>
+
+          <div class="group">
+            <button id="convert" type="button" class="chip primary" data-i18n="gif.convert">Convert</button>
+          </div>
+
+          <p id="gif-summary" class="hint"></p>
+
+          <div id="gif-progress" hidden>
+            <progress id="gif-bar" max="100" value="0"></progress>
+            <span id="gif-progress-label" class="hint"></span>
+          </div>
+
+          <div id="gif-output">
+            <img id="gif-result" alt="" data-i18n-label="gif.resultLabel" aria-label="The converted GIF" hidden />
+            <p id="gif-result-info" class="hint"></p>
+          </div>
+        </fieldset>
+      </section>
     </div>
 
     <div id="toast" role="status" aria-live="polite"></div>
     <div id="loading" data-i18n="app.loading">Loading…</div>
 
     <input id="file" type="file" accept="image/*,.aka" hidden />
+    <input id="video-file" type="file" accept="video/*,.webm,.mov,.mp4" hidden />
     <script type="module" src="/src/main.ts"></script>
   </body>
 </html>

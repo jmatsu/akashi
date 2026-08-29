@@ -9,15 +9,20 @@
  */
 export const en = {
   // --- document head ----------------------------------------------------
-  'app.title': 'aka — lightweight annotation tool',
+  'app.title': 'aka — lightweight screenshot and screen recording tools',
   'app.description':
-    'A lightweight tool for annotating, mosaicking and redacting screenshots. No install, works offline.',
+    'Lightweight tools for annotating screenshots and turning screen recordings into GIFs. No install, works offline.',
   'app.loading': 'Loading…',
 
+  // --- apps -------------------------------------------------------------
+  // What the switcher in the corner calls each app.
+  'app.editor': 'Annotate',
+  'app.gif': 'GIF',
+
   // --- web manifest -----------------------------------------------------
-  'manifest.name': 'aka - lightweight annotation tool',
+  'manifest.name': 'aka - lightweight screenshot and screen recording tools',
   'manifest.description':
-    'Annotate screenshots with text, shapes, arrows, markers, emoji stamps and mosaic/redaction. Works offline.',
+    'Annotate screenshots with text, shapes, arrows, markers, emoji stamps and mosaic/redaction, and turn a screen recording into an animated GIF. Works offline.',
 
   // --- header -----------------------------------------------------------
   'action.open': 'Open image',
@@ -42,8 +47,10 @@ export const en = {
   'language.label': 'Language',
 
   // --- app regions ------------------------------------------------------
+  'region.apps': 'Apps',
   'region.tools': 'Tools',
   'region.options': 'Options',
+  'region.gifOptions': 'Conversion options',
   'stage.dropHint': 'Drag and drop an image, or paste one with <kbd>Ctrl/Cmd</kbd>+<kbd>V</kbd>',
 
   // --- tools ------------------------------------------------------------
@@ -79,6 +86,29 @@ export const en = {
   'regionMode.transparent': 'Transparent',
   'hint.canvas': 'Drag the canvas to pan, pinch or Ctrl+wheel to zoom. Click an object to edit it.',
 
+  // --- gif converter ----------------------------------------------------
+  'gif.open': 'Open video',
+  'gif.save': 'Save GIF',
+  'gif.saveTitle': 'Save the converted GIF',
+  'gif.dropHint':
+    'Drag and drop a <kbd>webm</kbd>, <kbd>mov</kbd> or <kbd>mp4</kbd>, or open one from the header',
+  'gif.trim': 'Trim',
+  'gif.start': 'Start',
+  'gif.end': 'End',
+  'gif.fps': 'Frame rate',
+  'gif.width': 'Width',
+  'gif.widthOriginal': 'Original',
+  'gif.loop': 'Loop',
+  'gif.dither': 'Dither',
+  'gif.ditherTitle': 'Mix colours to soften banding, at some cost in size',
+  'gif.convert': 'Convert',
+  'gif.cancel': 'Stop',
+  'gif.resultLabel': 'The converted GIF',
+  'gif.summary': '{count} frames · {width} × {height} · {fps} fps · about {size}',
+  'gif.sampling': 'Choosing colours…',
+  'gif.progress': 'Frame {done} / {total}',
+  'gif.result': '{width} × {height} · {count} frames · {size}',
+
   // --- messages ---------------------------------------------------------
   'confirm.discard': 'The edits in progress will be discarded. Continue?',
   'toast.imageLoaded': 'Loaded {width} × {height}',
@@ -88,6 +118,10 @@ export const en = {
   'toast.copyUnsupported': 'This browser cannot copy images; use Save instead',
   'toast.draftLoaded': 'Draft opened, with {count} annotations',
   'toast.draftSaved': 'Draft saved. Open it on the other device to carry on',
+  'toast.videoLoaded': 'Loaded {width} × {height}, {duration}',
+  'toast.videoFailed': 'This browser cannot open that video',
+  'toast.gifSaved': 'Saved as GIF',
+  'toast.gifFailed': 'Could not convert that clip',
 }
 
 export type MessageKey = keyof typeof en
