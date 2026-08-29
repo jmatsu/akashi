@@ -175,6 +175,36 @@ To add a language, drop a catalog into `src/locales/` and list it in `index.ts`.
 `en.ts` is the reference — every other catalog is typed as `Catalog`, so a
 missing or extra key is a compile error.
 
+## The GIF encoder from a shell
+
+An experiment, not a product feature: the encoder the browser reaches through
+wasm, driven from a pipe instead. It sits behind a Cargo feature, so neither
+the library nor the wasm module carries any of it.
+
+```sh
+cargo build --manifest-path crate/Cargo.toml --release --features cli
+crate/target/release/akashi-gif --help
+```
+
+Decoding is somebody else's problem here for the same reason it is in the app.
+There a `<video>` element does it; here ffmpeg does, and the binary is the
+encoder and nothing more:
+
+```sh
+ffmpeg -i clip.mp4 -ss 2 -to 6 -vf scale=640:-1 -f rawvideo -pix_fmt rgba - \
+  | akashi-gif --width 640 --height 360 --fps 10 -o out.gif
+```
+
+Frames are read as tightly packed `width * height * 4` bytes, so `--width` and
+`--height` have to be the size ffmpeg is scaling to. What the app does with two
+handles and an output-width box is `-ss`, `-to` and `scale`. Frames are held in
+memory until the palette is settled — a pipe cannot be rewound to sample a
+spread of it — and `--max-frames` (300, the app's own ceiling) is what bounds
+that.
+
+Redaction is not exposed: `apply_region` is an editor interaction, not a
+conversion.
+
 ## Architecture
 
 Vite, TypeScript and vite-plugin-pwa are the only dependencies: no UI framework,
@@ -192,6 +222,7 @@ crate/src/region.rs     Pixel effects (mosaic / blackout / transparent)
 crate/src/gif.rs        Animated GIF: palette, frame differencing, container
 crate/src/gif/palette.rs  Median cut, the colour lookup table, dithering
 crate/src/gif/lzw.rs    The LZW variant GIF compresses with
+crate/src/bin/akashi-gif.rs  The encoder as a CLI, behind the `cli` feature
 
 src/main.ts             Boot: language, wasm, router, service worker
 src/apps.ts             The registry, and how a URL names an app (DOM-free)

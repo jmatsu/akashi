@@ -13,13 +13,13 @@
     "typecheck": "tsc --noEmit",
     "lint": "npm run lint:web && npm run lint:core",
     "lint:web": "biome lint .",
-    "lint:core": "cargo clippy --manifest-path crate/Cargo.toml --all-targets -- -D warnings",
+    "lint:core": "cargo clippy --manifest-path crate/Cargo.toml --all-targets --all-features -- -D warnings",
     "format": "biome format --write . && cargo fmt --manifest-path crate/Cargo.toml",
     "format:check": "npm run format:check:web && npm run format:check:core",
     "format:check:web": "biome format .",
     "format:check:core": "cargo fmt --manifest-path crate/Cargo.toml --check",
     "test": "npm run test:core && npm run test:web",
-    "test:core": "cargo test --manifest-path crate/Cargo.toml",
+    "test:core": "cargo test --manifest-path crate/Cargo.toml --all-features",
     "test:web": "node --test test/*.test.ts"
   },
   "devDependencies": {
