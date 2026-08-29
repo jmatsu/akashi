@@ -6,11 +6,10 @@ import { CATALOGS, DEFAULT_LOCALE, LOCALES, format, isLocale, isMessageKey } fro
 import type { Locale, MessageKey } from '../src/locales/index.ts'
 
 /**
- * The catalogs are checked against each other by the type system; what needs
- * testing is what it cannot see -- the placeholders inside the strings, and the
- * literals `index.html` ships so the page reads correctly before the module
- * runs. A drifting literal there is invisible: the app looks right the moment
- * JavaScript starts, and wrong for everyone reading it without.
+ * The type system checks the catalogs against each other; this covers what it
+ * cannot see -- the placeholders inside the strings, and the literals
+ * `index.html` ships for the page before the module runs. A drifting literal
+ * there is invisible once JavaScript has started.
  */
 
 const html = readFileSync(fileURLToPath(new URL('../index.html', import.meta.url)), 'utf8')
@@ -62,9 +61,8 @@ test('the literals in index.html match the default catalog', () => {
     assert.equal(literal, CATALOGS[DEFAULT_LOCALE][key], `index.html literal for ${key}`)
   }
 
-  // Element text, including the one message that carries `<kbd>` markup. No
-  // localized element nests another of its own tag, so the closing tag can be
-  // matched by name.
+  // No localized element nests another of its own tag, so the closing tag can
+  // be matched by name.
   let found = 0
   for (const [, , key, literal] of html.matchAll(
     /<(\w+)[^>]*?\bdata-i18n(?:-html)?="([^"]+)"[^>]*>([\s\S]*?)<\/\1>/g,

@@ -1,11 +1,7 @@
 /**
- * The one place the product's identity is written down.
- *
- * These values cross several boundaries that no compiler checks -- the web
- * manifest, the icon generator, the default drawing colour -- so they live in a
- * dependency-free module that all three can import. (`src/style.css` and the
- * `<meta name="theme-color">` in `index.html` still carry literal copies;
- * neither can import, and both are noted there.)
+ * The product's identity, in one dependency-free module the manifest, the icon
+ * generator and the editor can all import. `style.css` and the `theme-color`
+ * meta in `index.html` cannot import, so they carry literal copies.
  */
 
 /** Chrome and plate colour. */

@@ -1,15 +1,11 @@
 /**
  * The English catalog, and the shape every other locale is checked against.
- *
- * Only strings that carry a language belong here. The brand name, the emoji
- * palette, colour swatch titles, units (`px`, `%`), the zoom readout and key
- * names such as `Ctrl/Cmd+Z` read the same in every locale, so they stay at
- * their point of use instead of being funnelled through a catalog that would
- * only ever hold one spelling of them.
+ * Only strings that carry a language belong here: the brand name, emoji, colour
+ * codes, units and key names read the same everywhere, so they stay at their
+ * point of use.
  *
  * `{name}` placeholders are filled in by `t()`. Values are authored in this
- * repo and never contain user input, which is what makes the few entries
- * carrying markup safe to insert as HTML.
+ * repo and never contain user input, so the few carrying markup are safe as HTML.
  */
 export const en = {
   // --- document head ----------------------------------------------------

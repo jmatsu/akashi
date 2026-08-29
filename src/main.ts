@@ -10,8 +10,8 @@ async function boot(): Promise<void> {
   // Nothing below needs wasm, so let it load while the editor is built.
   const wasmReady = initWasm()
 
-  // Before anything reads a string: this fills in the markup's `data-i18n`
-  // keys, so the chrome is never shown in the wrong language.
+  // Before anything reads a string, so the chrome is never shown in the wrong
+  // language.
   initI18n()
 
   const stage = must<HTMLElement>('#stage')
@@ -22,9 +22,8 @@ async function boot(): Promise<void> {
   wireInput(editor)
   wireKeyboard(editor)
 
-  // Redactions are rendered by the wasm core, so the editor is not handed to
-  // the user until it is up -- a half-initialised one could show unredacted
-  // pixels.
+  // Redactions are rendered by the wasm core, so the editor is not handed over
+  // until it is up: a half-initialised one could show unredacted pixels.
   await wasmReady
   editor.newDoc()
   registerServiceWorker()
@@ -70,8 +69,8 @@ function wireHeader(editor: Editor): void {
   }
 
   name.addEventListener('input', () => editor.setName(name.value))
-  // Enter has nothing to submit; taking the focus back is what the user means
-  // by it, and it puts the tool shortcuts back within reach.
+  // Enter has nothing to submit, so it hands the focus -- and the tool
+  // shortcuts -- back.
   name.addEventListener('keydown', (e) => {
     if (e.key === 'Enter') name.blur()
   })
@@ -84,8 +83,8 @@ function wireHeader(editor: Editor): void {
   })
 
   editor.onChange(() => {
-    // Opening a document renames the field under the user; typing in it must
-    // not rewrite what they are in the middle of.
+    // Opening a document renames the field, but not under someone typing in
+    // it.
     if (document.activeElement !== name) name.value = editor.doc.name ?? ''
     zoomLabel.textContent = `${Math.round(editor.zoom * 100)}%`
     undo.disabled = !editor.canUndo
@@ -120,22 +119,16 @@ function wireLanguage(): void {
 // --- image in / out ----------------------------------------------------
 
 /**
- * Open whatever the user handed us: a file, a drop, a paste.
- *
- * A draft carries its session inside the PNG (see `draft.ts`), so this is also
- * the door a draft from another device comes in through -- paste and drag-drop
- * included, with no separate import step.
- *
- * The two rungs are tried in order, and a draft that will not open falls to the
- * one below it: the file is still a PNG of the annotated screenshot, which is
- * exactly what `draft.ts` promises when a session cannot be recovered.
+ * Open whatever the user handed us: a file, a drop, a paste. A draft carries
+ * its session inside the PNG, so it arrives through the same door with no
+ * import step, and one that will not open still shows as the annotated PNG.
  */
 async function openFile(editor: Editor, source: Blob): Promise<void> {
   if (await openDraft(editor, source)) return
   try {
     const bitmap = await createImageBitmap(source)
-    // The blob is kept so a draft made from this image can carry the original
-    // pixels rather than a re-encode of the annotated ones.
+    // The blob is kept so a draft can carry the original pixels rather than a
+    // re-encode of the annotated ones.
     editor.setImage(bitmap, bitmap.width, bitmap.height, source, sourceName(source))
     toast(t('toast.imageLoaded', { width: bitmap.width, height: bitmap.height }))
   } catch {
@@ -147,15 +140,14 @@ async function openFile(editor: Editor, source: Blob): Promise<void> {
 async function openDraft(editor: Editor, source: Blob): Promise<boolean> {
   try {
     // Only a file that looks like it carries a session is read whole; an
-    // ordinary screenshot goes straight to `createImageBitmap`, which decodes
-    // it off-thread without it ever landing in the heap here.
+    // ordinary screenshot is decoded off-thread and never lands in the heap.
     const head = new Uint8Array(await source.slice(0, PROBE_BYTES).arrayBuffer())
     if (!mayCarryDraft(head)) return false
     const draft = decodeDraft(new Uint8Array(await source.arrayBuffer()))
     if (draft === null) return false
 
-    // A draft whose embedded image will not decode throws here and falls to
-    // the plain-image path, which still has the annotated PNG to show.
+    // An embedded image that will not decode throws, and the caller falls back
+    // to the annotated PNG.
     const embedded = draft.image
     let image: { bitmap: ImageBitmap; source: Blob } | null = null
     if (embedded !== null) {
@@ -171,9 +163,8 @@ async function openDraft(editor: Editor, source: Blob): Promise<boolean> {
 }
 
 /**
- * What the image was called where it came from, so saving the annotated version
- * lands next to it under the same name rather than a timestamp. A pasted or
- * dropped-in blob is not a `File` and has nothing to take.
+ * What the image was called where it came from, so the annotated version saves
+ * under the same name. A pasted blob is not a `File` and has nothing to take.
  */
 function sourceName(source: Blob): string | null {
   return source instanceof File ? baseName(source.name) : null
@@ -186,8 +177,8 @@ function download(blob: Blob, name: string): void {
   a.href = url
   a.download = name
   a.click()
-  // Revoking straight after `click()` can cut the download off before the
-  // browser has read the blob; one task later is safely past that.
+  // Revoking straight after `click()` can cut the download off before the blob
+  // is read; one task later is safely past that.
   setTimeout(() => URL.revokeObjectURL(url), 0)
 }
 
@@ -198,21 +189,15 @@ async function savePng(editor: Editor): Promise<void> {
 }
 
 /**
- * Hand the whole editing session to another device, as a PNG that carries it
- * under aka's own extension (see `draft.ts`). The share sheet is used where the
- * browser has one, and a plain download is the fallback everywhere else.
- *
- * That fallback is the usual path on Chrome, not a rare one: it shares only
- * files whose extension is on a permitted list, and `.aka` is not on it, so
- * `canShare` says no and the draft goes to the downloads folder for the user to
- * pass on themselves. Worth the step -- the name is what keeps a file holding
- * the unredacted original from being mistaken for the flattened export.
+ * Hand the whole editing session to another device as a `.aka` file (see
+ * `draft.ts`), through the share sheet where there is one and a download
+ * otherwise. Chrome takes the fallback as a rule: it shares only files whose
+ * extension is on a permitted list, and `.aka` is not on it.
  */
 async function shareDraft(editor: Editor): Promise<void> {
   const source = editor.sourceImage()
-  // The render and the read of the original are independent, and the render is
-  // the slow half: waiting for them in series would hide the read behind
-  // nothing.
+  // Independent, and the render is the slow half: in series, the read would
+  // wait behind it for nothing.
   const [flat, bytes] = await Promise.all([
     editor.toBlob().then((blob) => blob.arrayBuffer()),
     source?.arrayBuffer(),
@@ -223,7 +208,7 @@ async function shareDraft(editor: Editor): Promise<void> {
       : { mime: source.type || 'image/png', bytes: new Uint8Array(bytes) }
   const parts = encodeDraft(new Uint8Array(flat), { doc: editor.doc, image })
   // The bytes really are a PNG, and saying so is what lets a receiving app
-  // preview or open the draft at all; only the name sets it apart.
+  // open the draft at all; only the name sets it apart.
   const file = new File(parts, fileName(editor.doc.name, 'aka-draft', DRAFT_EXT), { type: 'image/png' })
 
   if (navigator.canShare?.({ files: [file] })) {
@@ -231,8 +216,8 @@ async function shareDraft(editor: Editor): Promise<void> {
       await navigator.share({ files: [file], title: file.name })
       return
     } catch (e) {
-      // Dismissing the sheet is a cancel, not a failure. Anything else falls
-      // through to the download, so a draft is never left with no way out.
+      // Dismissing the sheet is a cancel; anything else falls through to the
+      // download, so a draft is never left with no way out.
       if (e instanceof DOMException && e.name === 'AbortError') return
     }
   }
@@ -297,16 +282,14 @@ function wireKeyboard(editor: Editor): void {
   }
 
   window.addEventListener('keydown', (e) => {
-    // A focused slider, colour well, name field or the inline text editor owns
-    // its own keys. (The textarea also stops propagation, so it never reaches
-    // here.)
+    // A focused slider, colour well or name field owns its own keys. (The
+    // inline textarea stops propagation, so it never reaches here.)
     const inField = e.target instanceof HTMLElement && e.target.matches('input, textarea, select')
 
     if (e.metaKey || e.ctrlKey) {
       const key = e.key.toLowerCase()
-      // Saving is the one shortcut a focused field does not swallow: typing a
-      // name and pressing Ctrl/Cmd+S is a single gesture. The rest stay the
-      // field's own -- Ctrl/Cmd+Z there means the text, not the drawing.
+      // Saving is the one shortcut a focused field does not swallow: naming a
+      // document and pressing Ctrl/Cmd+S is a single gesture.
       if (inField && key !== 's') return
       const action = withModifier[key]
       if (!action) return

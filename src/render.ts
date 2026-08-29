@@ -7,14 +7,12 @@ import { applyRegion } from './wasm'
 const MARKER_ALPHA = 0.45
 
 /**
- * Draw the whole document into `ctx` at 1:1 document scale, with no transform
- * applied. The editor keeps a scene canvas exactly this size; the visible
- * canvas then blits it under the pan/zoom transform, and PNG export reads it
- * directly. Region effects need `getImageData`, which ignores transforms, so
- * this separation is what makes them work at any zoom.
+ * Draw the whole document into `ctx` at 1:1, with no transform applied. The
+ * editor keeps a scene canvas exactly this size, blits it under the pan/zoom
+ * transform, and exports it directly. Region effects need `getImageData`, which
+ * ignores transforms, so this separation is what makes them work at any zoom.
  *
- * `skipId` omits one object: while a text object is being typed into, the live
- * `<textarea>` overlay stands in for it, and drawing both would double it up.
+ * `skipId` omits the object a live `<textarea>` overlay is standing in for.
  */
 export function renderScene(
   ctx: CanvasRenderingContext2D,
@@ -181,9 +179,7 @@ function drawEmoji(ctx: CanvasRenderingContext2D, o: EmojiObj): void {
 function drawRegion(ctx: CanvasRenderingContext2D, o: RegionObj, doc: Doc): void {
   const r = normalize(o)
   // Clamp to the document: `getImageData` outside it returns transparent
-  // pixels, and writing those back would punch holes in the page. Clamping to
-  // the document rather than to `ctx.canvas` keeps this correct if the scene is
-  // ever rendered into a larger canvas.
+  // pixels, and writing those back would punch holes in the page.
   const x = Math.max(0, Math.floor(r.x))
   const y = Math.max(0, Math.floor(r.y))
   const w = Math.min(doc.width, Math.ceil(r.x + r.w)) - x
@@ -199,13 +195,9 @@ function drawRegion(ctx: CanvasRenderingContext2D, o: RegionObj, doc: Doc): void
 export const HANDLE_SIZE = 9
 
 /**
- * The selection's chrome, projected into screen pixels: the dashed box and the
- * handles sitting on it.
- *
- * The chrome is not only drawn but also grabbed -- a handle resizes, the box
- * moves -- so what it consists of is derived here once and used by both. Two
- * independent derivations would let the drawn outline and the grabbable strip
- * drift apart, and nothing would fail when they did.
+ * The selection's chrome in screen pixels: the dashed box and its handles. It
+ * is both drawn and grabbed, so deriving it once keeps the outline you see and
+ * the strip you can grab from drifting apart.
  */
 export interface SelectionChrome {
   box: Rect

@@ -1,7 +1,6 @@
 // Generates the PWA icon set from geometry -- no image libraries, no binary
-// blobs to review. Run with `node scripts/make-icons.mjs` after changing the
-// mark. Colours and the icon list come from src/brand.ts, which vite.config.ts
-// reads too.
+// blobs to review. Run after changing the mark; colours and the icon list come
+// from src/brand.ts.
 import { deflateSync } from 'node:zlib'
 import { writeFileSync, mkdirSync } from 'node:fs'
 import { dirname, join } from 'node:path'
@@ -12,9 +11,8 @@ import { PNG_SIGNATURE, chunk } from '../src/png.ts'
 const OUT = join(dirname(fileURLToPath(import.meta.url)), '..', 'public')
 
 /**
- * The mark, in a 100-unit design space: a red disc on a rounded plate, with a
- * white annotation arrow across it. `favicon.svg` below draws the same shape,
- * so both read from here.
+ * The mark in a 100-unit design space: a red disc on a rounded plate under a
+ * white arrow. The `favicon.svg` below draws the same shape from these values.
  */
 const MARK = {
   plateRadius: 22,
@@ -101,9 +99,8 @@ function renderIcon(size, bleed) {
 
 // --- minimal PNG writer -------------------------------------------------
 
-// The container itself -- signature, chunk framing, CRC -- comes from
-// src/png.ts, which the app uses to read and splice drafts. Only the image
-// data below is this script's own.
+// The container -- signature, framing, CRC -- comes from src/png.ts. Only the
+// image data below is this script's own.
 
 function encodePng(rgba, size) {
   const ihdr = Buffer.alloc(13)
