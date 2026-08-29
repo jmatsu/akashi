@@ -11,7 +11,7 @@
 <p align="center">
   <a href="https://akashi.jmatsu.dev"><img src="https://img.shields.io/badge/open-akashi.jmatsu.dev-df6757" alt="Open Akashi"></a>
   <img src="https://img.shields.io/badge/backend-none%20·%20works%20offline-1b1d21" alt="No backend, works offline">
-  <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-1b1d21" alt="MIT License"></a>
+  <a href="LICENSE"><img src="https://img.shields.io/badge/license-Apache%202.0-1b1d21" alt="Apache 2.0 License"></a>
 </p>
 
 <p align="center">
@@ -20,7 +20,8 @@
   <a href="#principles">Principles</a> •
   <a href="#nothing-leaves-the-device">Privacy</a> •
   <a href="#keyboard-shortcuts">Shortcuts</a> •
-  <a href="#development">Development</a>
+  <a href="#development">Development</a> •
+  <a href="CONTRIBUTING.md">Contributing</a>
 </p>
 
 <p align="center">
@@ -102,6 +103,7 @@ barriers hold the code to it:
 - **The browser enforces it.**
   - `src/csp.ts` states a Content-Security-Policy.
 - **The linter refuses to write it.**
+  - `biome.json` denies `fetch`, `XMLHttpRequest`, `WebSocket`, `EventSource` and `RTCPeerConnection` outright.
 - **The build is checked.**
   - `test/offline.test.ts` covers generated and vendored code, which the first two barriers do not.
 
@@ -115,7 +117,7 @@ Frame rate, output width, looping and dithering are the settings.
 - **Nothing is bundled to decode video**
   — The clip is never uploaded to be read: it reaches the `<video>` element as a blob of its own bytes.
 - **The GIF handling also requires no backend**
-  - Rust WASM does. See [gif modules in ./crate/src][./crate/src].
+  - Rust WASM does. See [the gif modules in `crate/src`](crate/src).
 
 ## Keyboard shortcuts
 
@@ -139,7 +141,7 @@ that you can draw on top of existing shapes.
 
 # Development
 
-For agents, respect [Principles](#Principles) first.
+For agents, respect [Principles](#principles) first.
 
 ## Setup
 
@@ -262,6 +264,13 @@ the canvas for IME input. The scene canvas is kept separate from the visible one
 because `getImageData` ignores transforms, so redactions need a canvas at
 document scale to be correct at any zoom; selection handles are drawn only on
 the visible one and so never reach an export.
+
+## Contributing
+
+Issues are welcome; open one and let it be discussed before writing a pull
+request. See [CONTRIBUTING](CONTRIBUTING.md). A vulnerability goes through a
+[security advisory](https://github.com/jmatsu/akashi/security/advisories/new)
+rather than a public issue: see [SECURITY](SECURITY.md).
 
 ## License
 

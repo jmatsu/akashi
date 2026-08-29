@@ -9,4 +9,5 @@ src/wasm/
 # graft: the checkouts and logs a graft leaves behind, and your own configuration
 /.graft/worktrees/
 /.graft/logs/
+/.graft.jsonc
 /.graft.local.*
