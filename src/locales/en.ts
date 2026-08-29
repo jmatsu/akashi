@@ -61,7 +61,7 @@ export const en = {
   'install.menu': 'Install app',
   'install.dismiss': 'Dismiss',
   'install.manualTitle': 'Add Akashi to the Home Screen',
-  'install.manualSteps': 'Tap <kbd>Share</kbd> in the browser bar, then <kbd>Add to Home Screen</kbd>',
+  'install.manualSteps': 'Open the browser <kbd>Share</kbd> menu, then <kbd>Add to Home Screen</kbd>',
   'install.manualClose': 'Got it',
 
   // --- app regions ------------------------------------------------------

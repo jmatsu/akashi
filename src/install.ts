@@ -9,8 +9,10 @@
  * affordance explains the Share-sheet route instead.
  */
 
-import { must, toast } from './dom'
-import { t } from './i18n'
+// Extensions named, as in `src/locales/`: which browsers are left to install
+// themselves is a rule worth testing, and Node loads this module to do it.
+import { must, toast } from './dom.ts'
+import { t } from './i18n.ts'
 
 /** Chromium's own event, which the DOM lib does not describe. */
 interface InstallPrompt extends Event {
@@ -87,13 +89,15 @@ export function wireInstall(): void {
 
 /**
  * Whether this browser can be installed to but never offers: on iOS every
- * engine is Safari's, and only Safari itself reaches the Home Screen entry in
- * the Share sheet.
+ * engine is Safari's, none fires an install event, and each keeps Add to Home
+ * Screen in a share menu of its own. Which browser it is does not narrow that
+ * down -- Chrome and Edge have the entry as much as Safari does -- so the test
+ * is the platform alone.
  */
 export function manualOnly(ua: string, touchPoints: number): boolean {
-  // iPadOS calls itself a Mac; the touch points are what tell the two apart.
-  const ios = /iPhone|iPod/.test(ua) || (/Macintosh/.test(ua) && touchPoints > 1)
-  return ios && !/CriOS|FxiOS|EdgiOS|OPiOS/.test(ua)
+  // iPadOS asks for desktop pages and calls itself a Mac; the touch points are
+  // what tell the two apart.
+  return /iPhone|iPad|iPod/.test(ua) || (/Macintosh/.test(ua) && touchPoints > 1)
 }
 
 function installed(): boolean {

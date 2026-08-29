@@ -52,7 +52,7 @@ export const ja: Catalog = {
   'install.menu': 'アプリとしてインストール',
   'install.dismiss': '閉じる',
   'install.manualTitle': 'ホーム画面に追加',
-  'install.manualSteps': 'ブラウザバーの <kbd>共有</kbd> から <kbd>ホーム画面に追加</kbd> を選びます',
+  'install.manualSteps': 'ブラウザの <kbd>共有</kbd> メニューから <kbd>ホーム画面に追加</kbd> を選びます',
   'install.manualClose': 'わかりました',
 
   // --- app regions ------------------------------------------------------
