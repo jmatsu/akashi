@@ -31,7 +31,7 @@
 </p>
 
 <p align="center">
-  <img src="docs/demo-gif.gif" width="820" alt="Converting a screen recording in Akashi: the two trim handles narrow the range, then Convert produces an animated GIF">
+  <img src="docs/demo-gif.gif" width="820" alt="Converting a screen recording in Akashi: the two trim handles narrow the range, Convert produces an animated GIF, and the Export menu saves it">
   <br>
   <em><b>GIF</b> — trim the clip with two handles, convert, and paste the result.</em>
 </p>
@@ -44,7 +44,9 @@
 
 ---
 
-Currently, Akashi offers two apps, switched from the corner of the header:
+Currently, Akashi offers two apps, switched from the header beside the mark.
+The rest of the header is **File** and **Export**, and the gear at the far end
+holds the product menu:
 
 | App | URL | What it does |
 | --- | --- | --- |
@@ -89,7 +91,7 @@ export.
 
 ## Draft annotations: continuing on another device
 
-Akashi allows you annotate on your phone, finish on your desktop. Tap **Draft** (`Ctrl/Cmd+Shift+S`), then Akashi writes a `.akashi` file that the other device's Akashi reopens with every object still selectable. **AirDrop, Quick Share, a cable or a shared folder all carry it as-is, with no server involved.**
+Akashi allows you annotate on your phone, finish on your desktop. Tap **Export ▸ Draft** (`Ctrl/Cmd+Shift+S`), then Akashi writes a `.akashi` file that the other device's Akashi reopens with every object still selectable. **AirDrop, Quick Share, a cable or a shared folder all carry it as-is, with no server involved.**
 
 Please note that a draft file (`.akashi`) is a real PNG file but do not treat this as a shareable image format. The original image and annotations are stored independently in the `.akashi` file, allowing the recipient to recover the original image file.
 
@@ -111,8 +113,9 @@ barriers hold the code to it:
 
 ## GIF: a screen recording into something you can paste
 
-Drop a `webm`, `mov` or `mp4` in, trim it with the two handles, and convert.
-Frame rate, output width, looping and dithering are the settings.
+Drop a `webm`, `mov` or `mp4` in, trim it with the two handles, convert, and
+take the result from **Export ▸ Save GIF**. Frame rate, output width, looping
+and dithering are the settings.
 
 - **Nothing is bundled to decode video**
   — The clip is never uploaded to be read: it reaches the `<video>` element as a blob of its own bytes.
