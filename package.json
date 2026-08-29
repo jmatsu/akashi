@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "description": "Akashi - a lightweight, offline-first annotation & design tool for developers, QA and PO",
-  "license": "MIT",
+  "license": "Apache-2.0",
   "type": "module",
   "scripts": {
     "build:wasm": "wasm-pack build crate --release --target web --out-dir ../src/wasm --out-name akashi_core",

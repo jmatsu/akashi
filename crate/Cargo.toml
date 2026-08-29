@@ -2,7 +2,7 @@
 name = "akashi-core"
 version = "0.1.0"
 edition = "2024"
-license = "MIT"
+license = "Apache-2.0"
 description = "Pixel-region processing (mosaic / redaction / transparency) for the Akashi annotation tool"
 
 [lib]
