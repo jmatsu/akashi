@@ -1,4 +1,4 @@
-import { apply_region } from '../../wasm/aka_core.js'
+import { apply_region } from '../../wasm/akashi_core.js'
 // Named with its extension: Node loads this module in the tests, and `src/wasm`
 // is also the directory the generated bindings live in.
 import { pixels, requireWasm } from '../../wasm.ts'

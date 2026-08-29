@@ -1,7 +1,8 @@
 /**
- * The little of the PNG container aka needs: an 8-byte signature and a table of
- * length/name/data/CRC frames. `draft.ts` splices a private chunk into a
- * rendered PNG with it, `scripts/make-icons.mjs` writes the icon set with it.
+ * The little of the PNG container Akashi needs: an 8-byte signature and a
+ * table of length/name/data/CRC frames. `draft.ts` splices a private chunk
+ * into a rendered PNG with it, `scripts/make-icons.mjs` writes the icon set
+ * with it.
  *
  * No DOM, no Node: the app, the build script and the tests all load this.
  */

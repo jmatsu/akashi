@@ -1,9 +1,9 @@
 [package]
-name = "aka-core"
+name = "akashi-core"
 version = "0.1.0"
 edition = "2024"
 license = "MIT"
-description = "Pixel-region processing (mosaic / redaction / transparency) for the aka annotation tool"
+description = "Pixel-region processing (mosaic / redaction / transparency) for the Akashi annotation tool"
 
 [lib]
 crate-type = ["cdylib", "rlib"]

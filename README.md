@@ -1,9 +1,9 @@
-# aka
+# Akashi
 
 Lightweight tools for the things developers, QA and PO do to screenshots and
 screen recordings before pasting them into a ticket.
 
-**<https://aka.jmatsu.dev/>**
+**<https://akashi.jmatsu.dev/>**
 
 Two apps, switched from the corner of the header:
 
@@ -12,11 +12,23 @@ Two apps, switched from the corner of the header:
 | **Annotate** | `/` | Text, shapes, arrows, markers, stamps and redaction on a screenshot |
 | **GIF** | `/?app=gif` | A `webm`, `mov` or `mp4` clip trimmed and converted to an animated GIF |
 
-aka is a PWA, so the same thing runs on Windows, macOS, Linux, Android and iOS.
-Nothing you open leaves your device — there is nowhere to upload it to — and a
-service worker precaches every asset, so it works offline once opened. The UI is
-in English and Japanese, picked from your browser's language and switchable from
-the header.
+Akashi is a PWA, so the same thing runs on Windows, macOS, Linux, Android and
+iOS. Nothing you open leaves your device — there is nowhere to upload it to —
+and a service worker precaches every asset, so it works offline once opened. The
+UI is in English and Japanese, picked from your browser's language and
+switchable from the header.
+
+## The name
+
+**証** (*akashi*) is Japanese for evidence — the proof you attach to a ticket so
+that a bug is something someone else can see. It is also what the app does, in
+order: **A**nnotate, **K**nit, **A**ssure, **SH**ip. Mark up the screenshot,
+stitch the recording into a single artefact, redact what must not travel, and
+hand it on.
+
+It was called `aka` until this rename. `jmatsu.github.io/aka/` still forwards
+here, and a draft written as `.aka` still opens — the reader goes by the bytes,
+not the name.
 
 ## Annotate
 
@@ -36,30 +48,30 @@ export.
 Images come in by paste (`Ctrl/Cmd+V`), drag and drop, or the file picker, and
 go out as a saved PNG or straight onto the clipboard. The name field in the
 header is what exports are called — it starts as the name of the image you
-opened, and falls back to `aka-<timestamp>.png` for a pasted one.
+opened, and falls back to `akashi-<timestamp>.png` for a pasted one.
 
 ## Drafts: continuing on another device
 
 Annotate on your phone, finish on your desktop. **Draft** (`Ctrl/Cmd+Shift+S`)
-writes a `.aka` file that the other device's aka reopens with every object still
-selectable. Drop it, paste it or pick it like any image — aka checks the bytes,
-not the extension.
+writes a `.akashi` file that the other device's Akashi reopens with every
+object still selectable. Drop it, paste it or pick it like any image — Akashi
+checks the bytes, not the extension.
 
 A draft is a real PNG: the same flattened image "Save" produces, with the
 editing session stored in a private PNG chunk beside the pixels. AirDrop, Quick
 Share, a cable or a shared folder all carry it as-is, with no server involved.
 
-It is named `.aka` rather than `.png` because **a draft contains the original
+It is named `.akashi` rather than `.png` because **a draft contains the original
 image**, so passing one on undoes every blackout and mosaic drawn over it. The
 extension keeps it distinct from the flattened export you meant to send, and
 lands it in Files rather than Photos on iOS, which would re-encode it and strip
-the chunk. The cost is that Chrome will not share a `.aka` file through the
+the chunk. The cost is that Chrome will not share a `.akashi` file through the
 share sheet, so there you get a download to pass on yourself.
 
 ## Nothing leaves the device
 
 The screenshots people annotate here are the ones they cannot send anywhere:
-staging data, a customer's account, an unreleased screen. So aka has no server,
+staging data, a customer's account, an unreleased screen. So Akashi has no server,
 no analytics and no telemetry — and rather than leave that as a promise, three
 barriers hold the code to it:
 
@@ -91,7 +103,7 @@ them says how many frames that comes to and roughly what it will weigh, before
 you spend anything on it.
 
 **Nothing is bundled to decode video** — the browser you already have does that,
-which is why the formats aka opens are exactly the formats your browser plays
+which is why the formats Akashi opens are exactly the formats your browser plays
 (H.264, VP8/VP9 and AV1 everywhere; HEVC in Safari). The clip is never uploaded
 to be read: it reaches the `<video>` element as a blob of its own bytes.
 
@@ -114,7 +126,7 @@ In the annotation app:
 | `Ctrl/Cmd+Z` / `Ctrl/Cmd+Shift+Z` | Undo / redo |
 | `Delete` `Backspace` | Delete the selection |
 | `Esc` | Deselect, or confirm the text you are typing |
-| `Ctrl/Cmd+S` / `Ctrl/Cmd+Shift+S` | Save a PNG / write a `.aka` draft |
+| `Ctrl/Cmd+S` / `Ctrl/Cmd+Shift+S` | Save a PNG / write a `.akashi` draft |
 | `Ctrl/Cmd+0` / `Ctrl/Cmd+1` | Fit to window / actual size |
 | `Shift` + drag | Constrain to a square or circle; snap arrows to 45° |
 
@@ -150,15 +162,16 @@ npm run format:check  # the same check CI runs
 ```
 
 `dist/` is static files, so any host will do; for a sub-path deploy, build with
-`AKA_BASE=/aka/ npm run build`. CI runs the same checks on every push and pull
-request. `main` is published to Cloudflare Pages, and a pull request from this
-repository gets a preview deployment commented onto it.
+`AKASHI_BASE=/akashi/ npm run build`. CI runs the same checks on every push and
+pull request. `main` is published to Cloudflare Pages, and a pull request from
+this repository gets a preview deployment commented onto it.
 
 GitHub Pages serves the redirect in `.github/workflows/gh-pages-redirect/`,
-which is what `https://jmatsu.github.io/aka/` now answers with. Its `sw.js`
-replaces the service worker aka used to install there, so anyone still holding
-the old PWA is carried across rather than left on a cached copy — it has to keep
-being deployed for as long as that is true.
+which is what `https://jmatsu.github.io/akashi/` answers with — and
+`/aka/` before it, which is where the app actually lived. Its `sw.js` replaces
+the service worker Akashi used to install there, so anyone still holding the old
+PWA is carried across rather than left on a cached copy — it has to keep being
+deployed for as long as that is true.
 
 To add a language, drop a catalog into `src/locales/` and list it in `index.ts`.
 `en.ts` is the reference — every other catalog is typed as `Catalog`, so a

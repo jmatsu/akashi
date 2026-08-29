@@ -77,7 +77,7 @@ function wireHeader(): void {
 
 function save(): void {
   if (result === null) return
-  download(result.blob, fileName(must<HTMLInputElement>('#gif-name').value, 'aka', 'gif'))
+  download(result.blob, fileName(must<HTMLInputElement>('#gif-name').value, 'akashi', 'gif'))
   toast(t('toast.gifSaved'))
 }
 
@@ -181,7 +181,7 @@ async function open(source: Blob): Promise<void> {
   try {
     const clip = await loadClip(video, source)
     if (clip.width === 0 || clip.height === 0 || clip.duration <= 0)
-      throw new Error('aka: nothing to convert')
+      throw new Error('akashi: nothing to convert')
     loaded = { clip, name: source instanceof File ? baseName(source.name) : null }
 
     const start = must<HTMLInputElement>('#trim-start')

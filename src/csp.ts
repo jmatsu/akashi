@@ -1,5 +1,5 @@
 /**
- * aka never sends anything anywhere: an image you open stays in the tab you
+ * Akashi never sends anything anywhere: an image you open stays in the tab you
  * opened it in. The policy below is what keeps that true even when the code is
  * wrong -- with `default-src 'none'` and nothing reachable but the app's own
  * origin, a stray request has nowhere to carry a screenshot to.

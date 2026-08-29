@@ -5,8 +5,8 @@ import { fileURLToPath } from 'node:url'
 import { cspPolicy } from '../src/csp.ts'
 
 /**
- * The principle is that nothing aka holds ever leaves the device, and this is
- * the check that survives a refactor: it reads the shipped build, not the
+ * The principle is that nothing Akashi holds ever leaves the device, and this
+ * is the check that survives a refactor: it reads the shipped build, not the
  * source, so a dependency, a plugin or a generated worker is held to it too.
  *
  * It needs `npm run build` to have run -- which is the order CI uses, and the

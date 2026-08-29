@@ -4,7 +4,7 @@ import type { Catalog } from './en.ts'
  *  compile error rather than a string that quietly falls back to English. */
 export const ja: Catalog = {
   // --- document head ----------------------------------------------------
-  'app.title': 'aka — スクリーンショットと画面録画のための軽量ツール',
+  'app.title': 'Akashi — スクリーンショットと画面録画のための軽量ツール',
   'app.description':
     'スクリーンショットに注釈を入れ、画面録画を GIF に変換する軽量ツール。インストール不要、オフラインでも動作します。',
   'app.loading': '読み込み中…',
@@ -14,7 +14,7 @@ export const ja: Catalog = {
   'app.gif': 'GIF',
 
   // --- web manifest -----------------------------------------------------
-  'manifest.name': 'aka - スクリーンショットと画面録画のための軽量ツール',
+  'manifest.name': 'Akashi - スクリーンショットと画面録画のための軽量ツール',
   'manifest.description':
     'スクリーンショットにテキスト・図形・矢印・マーカー・絵文字スタンプ・モザイク / 黒塗りを入れ、画面録画をアニメーション GIF に変換できます。オフラインでも動作します。',
 
@@ -36,7 +36,7 @@ export const ja: Catalog = {
   'action.draftTitle': '別の端末に引き継ぐ',
   'action.delete': '削除',
   'name.label': '保存するファイルの名前',
-  'name.placeholder': 'aka-<日時>',
+  'name.placeholder': 'akashi-<日時>',
   'language.label': '言語',
 
   // --- app regions ------------------------------------------------------

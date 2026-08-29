@@ -46,19 +46,19 @@ test('a trailing dot or space is dropped, since Windows drops it anyway', () => 
 
 test('the extension comes off a file name, and only the last one', () => {
   assert.equal(baseName('bug-repro.png'), 'bug-repro')
-  assert.equal(baseName('bug.repro.aka'), 'bug.repro')
+  assert.equal(baseName('bug.repro.akashi'), 'bug.repro')
   assert.equal(baseName('screenshot'), 'screenshot')
   assert.equal(baseName('.env'), 'env')
 })
 
 test('an unnamed document is written under a timestamp, as it always was', () => {
   const at = new Date(2026, 7, 29, 1, 18, 4)
-  assert.equal(fileName(null, 'aka', 'png', at), 'aka-20260829-011804.png')
-  assert.equal(fileName('   ', 'aka-draft', 'aka', at), 'aka-draft-20260829-011804.aka')
+  assert.equal(fileName(null, 'akashi', 'png', at), 'akashi-20260829-011804.png')
+  assert.equal(fileName('   ', 'akashi-draft', 'akashi', at), 'akashi-draft-20260829-011804.akashi')
 })
 
 test('a named document is written under its name, whichever half of it is saved', () => {
-  assert.equal(fileName('bug repro', 'aka', 'png'), 'bug repro.png')
-  assert.equal(fileName('bug repro', 'aka-draft', 'aka'), 'bug repro.aka')
-  assert.equal(fileName('shots/bug', 'aka', 'png'), 'shots bug.png')
+  assert.equal(fileName('bug repro', 'akashi', 'png'), 'bug repro.png')
+  assert.equal(fileName('bug repro', 'akashi-draft', 'akashi'), 'bug repro.akashi')
+  assert.equal(fileName('shots/bug', 'akashi', 'png'), 'shots bug.png')
 })

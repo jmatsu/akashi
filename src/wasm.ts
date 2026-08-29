@@ -1,4 +1,4 @@
-import init from './wasm/aka_core.js'
+import init from './wasm/akashi_core.js'
 
 /**
  * Bringing up the wasm core, which both apps draw on: `apps/editor/region.ts`
@@ -24,7 +24,7 @@ export function wasmReady(): Promise<void> {
 
 /** Throws unless `wasmReady()` has resolved. `what` names the caller. */
 export function requireWasm(what: string): void {
-  if (!loaded) throw new Error(`aka: ${what} used before the wasm core was ready`)
+  if (!loaded) throw new Error(`akashi: ${what} used before the wasm core was ready`)
 }
 
 /**

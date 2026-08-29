@@ -3,13 +3,13 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>aka has moved</title>
-    <!-- aka.jmatsu.dev is the custom domain on the Cloudflare Pages project
+    <title>aka is now Akashi</title>
+    <!-- akashi.jmatsu.dev is the custom domain on the Cloudflare Pages project
          that deploy.yml deploys to; the two move together. -->
-    <link rel="canonical" href="https://aka.jmatsu.dev/" />
+    <link rel="canonical" href="https://akashi.jmatsu.dev/" />
     <!-- The redirect without JavaScript. The script below does it faster, and
          carries the rest of the URL across; this only gets the origin right. -->
-    <meta http-equiv="refresh" content="0; url=https://aka.jmatsu.dev/" />
+    <meta http-equiv="refresh" content="0; url=https://akashi.jmatsu.dev/" />
     <style>
       /* Matches INK in src/brand.ts and --text in src/style.css. */
       body {
@@ -24,14 +24,15 @@
     </style>
   </head>
   <body>
-    <p>aka now lives at <a href="https://aka.jmatsu.dev/">aka.jmatsu.dev</a>.</p>
+    <p>aka is now Akashi, at <a href="https://akashi.jmatsu.dev/">akashi.jmatsu.dev</a>.</p>
     <script>
-      // This site was served under the repository name, so everything after
-      // that prefix is the part worth carrying over to the new origin.
-      const base = '/aka/'
+      // This site is served under the repository name, and the repository was
+      // renamed -- so an address held from before arrives under the old one.
+      // Everything past whichever prefix is what carries to the new origin.
       const { pathname, search, hash } = location
-      const rest = pathname.startsWith(base) ? pathname.slice(base.length) : ''
-      location.replace(`https://aka.jmatsu.dev/${rest}${search}${hash}`)
+      const base = ['/akashi/', '/aka/'].find((b) => pathname.startsWith(b))
+      const rest = base ? pathname.slice(base.length) : ''
+      location.replace(`https://akashi.jmatsu.dev/${rest}${search}${hash}`)
     </script>
   </body>
 </html>

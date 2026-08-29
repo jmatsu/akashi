@@ -10,7 +10,7 @@ import type { Locale } from './src/locales'
 
 // Cloudflare Pages serves from the root, so nothing sets this today; it stays
 // overridable because a sub-path deploy is one env var away, not a rewrite.
-const base = process.env.AKA_BASE ?? '/'
+const base = process.env.AKASHI_BASE ?? '/'
 
 /**
  * What the dev server needs on top of the shipped policy: HMR's socket, the
@@ -27,7 +27,7 @@ const DEV_CSP: Directives = {
 function csp(): Plugin {
   let serving = false
   return {
-    name: 'aka:csp',
+    name: 'akashi:csp',
     configResolved(config) {
       serving = config.command === 'serve'
     },
@@ -57,7 +57,7 @@ function manifestFor(locale: Locale): Record<string, unknown> {
     id: base,
     name: format(locale, 'manifest.name'),
     // The brand name is the same everywhere.
-    short_name: 'aka',
+    short_name: 'Akashi',
     description: format(locale, 'manifest.description'),
     lang: locale,
     // Matches the app chrome and the `theme-color` meta in index.html.
@@ -83,7 +83,7 @@ function manifestJson(locale: Locale): string {
 /** vite-plugin-pwa writes the default locale's manifest; the rest are emitted here. */
 function localizedManifests(): Plugin {
   return {
-    name: 'aka:localized-manifests',
+    name: 'akashi:localized-manifests',
     generateBundle() {
       for (const locale of LOCALES) {
         if (locale === DEFAULT_LOCALE) continue
