@@ -1,7 +1,49 @@
-# Akashi - https://akashi.jmatsu.dev
+<h1 align="center">
+  <br>
+  <a href="https://akashi.jmatsu.dev"><img src="public/icon-512.png" alt="Akashi" width="128"></a>
+  <br>
+  Akashi
+  <br>
+</h1>
 
-Lightweight tools for the things developers, QA and PO do to screenshots and
-screen recordings before pasting them into a ticket. Currently, Akashi offers two apps, switched from the corner of the header:
+<h4 align="center">Screenshots and screen recordings, made ready for a ticket — in the browser, on your device alone.</h4>
+
+<p align="center">
+  <a href="https://akashi.jmatsu.dev"><img src="https://img.shields.io/badge/open-akashi.jmatsu.dev-df6757" alt="Open Akashi"></a>
+  <img src="https://img.shields.io/badge/backend-none%20·%20works%20offline-1b1d21" alt="No backend, works offline">
+  <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-1b1d21" alt="MIT License"></a>
+</p>
+
+<p align="center">
+  <a href="#annotate">Annotate</a> •
+  <a href="#gif-a-screen-recording-into-something-you-can-paste">GIF</a> •
+  <a href="#principles">Principles</a> •
+  <a href="#nothing-leaves-the-device">Privacy</a> •
+  <a href="#keyboard-shortcuts">Shortcuts</a> •
+  <a href="#development">Development</a>
+</p>
+
+<p align="center">
+  <img src="docs/demo-annotate.gif" width="820" alt="Annotating a screenshot in Akashi: an arrow drawn at a button, a caption typed on the canvas, and a mosaic dragged over a field">
+  <br>
+  <em><b>Annotate</b> — drop a screenshot in, point at the thing, mosaic what must not travel.</em>
+</p>
+
+<p align="center">
+  <img src="docs/demo-gif.gif" width="820" alt="Converting a screen recording in Akashi: the two trim handles narrow the range, then Convert produces an animated GIF">
+  <br>
+  <em><b>GIF</b> — trim the clip with two handles, convert, and paste the result.</em>
+</p>
+
+<p align="center">
+  Lightweight tools for the things developers, QA and PO do to screenshots and
+  screen recordings before pasting them into a ticket. No account, no upload, no
+  backend — what you open never leaves the tab you opened it in.
+</p>
+
+---
+
+Currently, Akashi offers two apps, switched from the corner of the header:
 
 | App | URL | What it does |
 | --- | --- | --- |
