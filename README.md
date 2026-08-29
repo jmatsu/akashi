@@ -119,8 +119,13 @@ npm run format:check  # the same check CI runs
 `dist/` is static files, so any host will do; for a sub-path deploy, build with
 `AKA_BASE=/aka/ npm run build`. CI runs the same checks on every push and pull
 request. `main` is published to Cloudflare Pages, and a pull request from this
-repository gets a preview deployment commented onto it. The old GitHub Pages
-address redirects here.
+repository gets a preview deployment commented onto it.
+
+GitHub Pages serves the redirect in `.github/workflows/gh-pages-redirect/`,
+which is what `https://jmatsu.github.io/aka/` now answers with. Its `sw.js`
+replaces the service worker aka used to install there, so anyone still holding
+the old PWA is carried across rather than left on a cached copy — it has to keep
+being deployed for as long as that is true.
 
 To add a language, drop a catalog into `src/locales/` and list it in `index.ts`.
 `en.ts` is the reference — every other catalog is typed as `Catalog`, so a

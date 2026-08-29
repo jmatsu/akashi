@@ -2,13 +2,8 @@
 # <https://aka.jmatsu.dev/>. GitHub Pages still exists, but ci.yml now puts a
 # redirect there rather than the app.
 #
-# Standalone rather than a job in ci.yml, because the two want different builds:
-# Cloudflare serves from the root, so this one leaves `base` at the default `/`.
-#
-# A pull request from this repository gets a preview deployment on its own
-# branch, and the URL is posted back as a single comment that later pushes edit
-# in place. A fork's pull request has no access to the secrets, so it is skipped
-# rather than failed.
+# One workflow per host, so ci.yml stays the checks and each deploy is read in
+# one place. It costs a second build of the same bundle ci.yml already makes.
 #
 # Actions are pinned to a commit, since a tag can be moved. The trailing comment
 # is the release that commit was, so a bump says what it is moving away from.
@@ -37,7 +32,6 @@ permissions:
 env:
   # The tests import `.ts` files directly, which needs Node's type stripping.
   NODE_VERSION: '24'
-  CLOUDFLARE_PAGES_PROJECT: aka
 
 jobs:
   deploy:
@@ -53,9 +47,12 @@ jobs:
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - run: rustup target add wasm32-unknown-unknown
+      # `shared-key` rather than the default per-job key: this builds the same
+      # wasm as ci.yml's `build`, so the two share one cache entry.
       - uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2.9.2
         with:
           workspaces: crate
+          shared-key: wasm
       - uses: taiki-e/install-action@37f7c5781271959fb65b6b35224e28652ff2b63d # v2.87.0
         with:
           tool: wasm-pack
@@ -66,9 +63,8 @@ jobs:
       - run: npm ci
       # wasm-pack, then `tsc --noEmit`, then the bundle.
       - run: npm run build
-      # One of these reads `dist/` to hold the bundle to the no-network policy.
-      # Nothing that fails it should reach the live site, and this workflow does
-      # not wait on ci.yml, so it is checked here too.
+      # Nothing waits on ci.yml here, so the test that holds `dist/` to the
+      # no-network policy has to gate the live site itself.
       - run: npm run test:web
 
       # Any branch other than the project's production branch is a preview, so
@@ -80,15 +76,15 @@ jobs:
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           command: >-
             pages deploy dist
-            --project-name=${{ env.CLOUDFLARE_PAGES_PROJECT }}
+            --project-name=aka
             --branch=${{ github.head_ref || github.ref_name }}
 
       - name: Comment the preview URL
         if: github.event_name == 'pull_request'
         uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
         env:
-          # The per-deployment URL is stable forever; the alias is the per-branch
-          # one, which is the nicer link but only exists on a preview.
+          # The alias follows the branch, so it stays right as the PR is pushed
+          # to; the per-deployment URL is the fallback for a non-preview.
           DEPLOYMENT_URL: ${{ steps.deploy.outputs.deployment-url }}
           ALIAS_URL: ${{ steps.deploy.outputs.pages-deployment-alias-url }}
         with:
@@ -97,17 +93,8 @@ jobs:
             // last time rather than adding another one.
             const marker = '<!-- cloudflare-pages-preview -->'
             const { DEPLOYMENT_URL, ALIAS_URL } = process.env
-            const head = context.payload.pull_request.head
-            const body = [
-              marker,
-              '### Cloudflare Pages preview',
-              '',
-              '| | |',
-              '| --- | --- |',
-              `| Preview | ${ALIAS_URL || DEPLOYMENT_URL} |`,
-              `| This build | ${DEPLOYMENT_URL} |`,
-              `| Commit | \`${head.sha.slice(0, 7)}\` on \`${head.ref}\` |`,
-            ].join('\n')
+            const sha = context.payload.pull_request.head.sha.slice(0, 7)
+            const body = `${marker}\n**[Cloudflare Pages preview](${ALIAS_URL || DEPLOYMENT_URL})** \`${sha}\``
 
             const { owner, repo } = context.repo
             const issue_number = context.payload.pull_request.number

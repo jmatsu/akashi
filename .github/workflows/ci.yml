@@ -66,9 +66,12 @@ jobs:
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - run: rustup target add wasm32-unknown-unknown
+      # `shared-key` rather than the default per-job key, so the identical wasm
+      # build in deploy-pages-cloudflare.yml reuses this entry.
       - uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2.9.2
         with:
           workspaces: crate
+          shared-key: wasm
       - uses: taiki-e/install-action@37f7c5781271959fb65b6b35224e28652ff2b63d # v2.87.0
         with:
           tool: wasm-pack
@@ -84,10 +87,12 @@ jobs:
       - run: npm run test:web
 
   # jmatsu.github.io/aka/ is where the app used to live, so it stays up as a
-  # redirect to aka.jmatsu.dev rather than 404ing an address people have.
+  # redirect to aka.jmatsu.dev rather than 404ing an address people have. It
+  # shares no code with the app, so `web` -- the job that lints it -- is the
+  # only one worth gating on.
   deploy:
     name: Deploy the Pages redirect
-    needs: [web, crate, build]
+    needs: [web]
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-slim
     permissions:
@@ -100,11 +105,9 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       # GitHub Pages serves 404.html for anything it has no file for, which is
       # every deep link into the old app -- so the redirect has to be there too.
-      - run: |
-          cp -R .github/workflows/gh-pages-redirect site
-          cp site/index.html site/404.html
+      - run: cp .github/workflows/gh-pages-redirect/index.html .github/workflows/gh-pages-redirect/404.html
       - uses: actions/upload-pages-artifact@fc324d3547104276b827a68afc52ff2a11cc49c9 # v5.0.0
         with:
-          path: site
+          path: .github/workflows/gh-pages-redirect
       - id: deployment
         uses: actions/deploy-pages@cd2ce8fcbc39b97be8ca5fce6e763baed58fa128 # v5.0.0

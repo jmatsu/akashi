@@ -6,6 +6,7 @@
       "test/**",
       "scripts/**",
       "index.html",
+      ".github/workflows/gh-pages-redirect/**",
       "vite.config.ts",
       "package.json",
       "tsconfig.json",

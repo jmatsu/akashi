@@ -1,12 +1,11 @@
 // aka was a PWA here, so anyone who opened jmatsu.github.io/aka/ still has a
 // service worker precaching the old app -- it would serve that build from cache
-// forever and never reach the redirect page. This replaces it and takes itself
-// out: the browser byte-compares this file against the workbox one it has and
-// installs it, and this drops the caches, unregisters, and reloads the open
-// tabs onto the redirect.
+// forever and never reach the redirect page. Replacing that worker with this
+// one is what reaches them, since the browser refetches this path even when
+// every navigation is answered from the cache.
 //
-// It has to keep being served for as long as anyone might still be holding the
-// old worker, which is why it is not a one-off deploy.
+// So it has to keep being served for as long as anyone might still hold the old
+// worker: this file is not a one-off deploy, and deleting it strands them.
 
 self.addEventListener('install', () => self.skipWaiting())
 
