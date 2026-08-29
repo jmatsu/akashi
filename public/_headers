@@ -1,0 +1,16 @@
+# Cloudflare Pages reads this from the root of the deployed directory; `public/`
+# is copied there verbatim by the build.
+#
+# `no-transform` is the whole point. Cloudflare rewrites HTML at the edge --
+# JavaScript Detections injects an inline <script> into every page it serves --
+# and the policy in `src/csp.ts` allows no inline script, so the browser blocks
+# it and reports a violation on a page that asked for none of it. `no-transform`
+# is the response saying the body is to be served as it was built.
+#
+# The rest of the value is what Pages sends for HTML by default, restated
+# because naming the header here replaces it.
+/
+  Cache-Control: public, max-age=0, must-revalidate, no-transform
+
+/index.html
+  Cache-Control: public, max-age=0, must-revalidate, no-transform

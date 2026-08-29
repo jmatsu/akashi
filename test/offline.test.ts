@@ -62,6 +62,27 @@ test('nothing in the build names a protocol-relative host', () => {
   }
 })
 
+test('the page carries no inline script for the policy to block', () => {
+  const html = read(new URL('index.html', dist))
+  const inline = [...html.matchAll(/<script(?![^>]*\ssrc=)[^>]*>/g)].map((m) => m[0])
+  assert.deepEqual(inline, [], 'index.html would need a hash or a nonce to run')
+})
+
+/**
+ * The build ships no inline script, but a host can add one to the HTML it
+ * serves -- Cloudflare's JavaScript Detections does -- and the browser then
+ * reports a violation against a page that asked for none of it. `no-transform`
+ * is the response saying the body is to be served as it was built.
+ */
+test('the build tells the host to serve the page untransformed', () => {
+  const headers = read(new URL('_headers', dist))
+  for (const path of ['/', '/index.html']) {
+    const rule = headers.match(new RegExp(`^${path}\\n((?:  .*\\n)+)`, 'm'))
+    assert.ok(rule, `_headers states nothing for ${path}`)
+    assert.match(rule[1], /^ {2}Cache-Control:.*\bno-transform\b/m, `${path} may be rewritten`)
+  }
+})
+
 test('the page ships the policy stated in src/csp.ts', () => {
   const html = read(new URL('index.html', dist))
   const meta = html.match(/http-equiv="Content-Security-Policy" content="([^"]*)"/)
