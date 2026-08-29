@@ -183,10 +183,18 @@ An experiment, not a product feature: the encoder the browser reaches through
 wasm, driven from a pipe instead. It sits behind a Cargo feature, so neither
 the library nor the wasm module carries any of it.
 
+Built binaries for Linux, macOS and Windows are attached to the
+[`cli-v*` releases](https://github.com/jmatsu/akashi/releases), with a
+`SHA256SUMS` beside them. Or build it yourself:
+
 ```sh
 cargo build --manifest-path crate/Cargo.toml --release --features cli
 crate/target/release/akashi-gif --help
 ```
+
+A released binary reports the tag it was cut from and the commit under it —
+`0.1.0-a1b2c3d` — so `--version` in a bug report names one commit and no other.
+Built from a checkout it reports the crate version alone.
 
 Decoding is somebody else's problem here for the same reason it is in the app.
 There a `<video>` element does it; here ffmpeg does, and the binary is the
