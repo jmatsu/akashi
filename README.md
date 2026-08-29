@@ -26,6 +26,8 @@ hand it on.
   - Backend-less, no upload, no network request
 - Minimum external dependencies
 
+These are design principles, not a warranty. See [DISCLAIMER](DISCLAIMER.md).
+
 ## Annotate
 
 | Tool | What it does |
@@ -191,3 +193,4 @@ the visible one and so never reach an export.
 ## License
 
 Apache License 2.0. See [LICENSE](LICENSE) and [NOTICE](NOTICE).
+The software is provided "AS IS"; see [DISCLAIMER](DISCLAIMER.md).
