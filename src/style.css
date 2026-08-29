@@ -190,6 +190,20 @@ button {
   text-decoration: none;
 }
 
+/* The build stamp closes the panel: a footnote, appended by `src/main.ts`, and
+   a link only when there is a commit to open. */
+.menu-popup a.menu-item.build {
+  margin-top: 4px;
+  border-top: 1px solid var(--line);
+  border-radius: 0 0 6px 6px;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.menu-popup a.menu-item.build:not([href]):hover {
+  background: transparent;
+}
+
 .menu-popup .menu-item:hover:not(:disabled) {
   background: var(--panel-hi);
 }

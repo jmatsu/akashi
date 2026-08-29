@@ -1,5 +1,6 @@
+import { BUILD_DATE, BUILD_SHA, COMMIT_URL } from './build'
 import { must } from './dom'
-import { LOCALES, initI18n, isLocale, locale, localeName, setLocale } from './i18n'
+import { LOCALES, initI18n, isLocale, locale, localeName, onLocaleChange, setLocale, t } from './i18n'
 import { wireMenus } from './menu'
 import { startRouter } from './router'
 import { wasmReady } from './wasm'
@@ -19,6 +20,7 @@ async function boot(): Promise<void> {
   initI18n()
   wireMenus()
   wireLanguage()
+  wireBuild()
 
   await startRouter()
 
@@ -38,6 +40,24 @@ function wireLanguage(): void {
   select.addEventListener('change', () => {
     if (isLocale(select.value)) setLocale(select.value)
   })
+}
+
+/** Which build is running, and the commit it came from. */
+function wireBuild(): void {
+  const item = document.createElement('a')
+  item.className = 'menu-item build'
+  if (COMMIT_URL) {
+    item.href = COMMIT_URL
+    item.target = '_blank'
+    item.rel = 'noreferrer'
+  }
+  must<HTMLElement>('#menu-app').appendChild(item)
+
+  const label = (): void => {
+    item.textContent = t('menu.build', { sha: BUILD_SHA, date: BUILD_DATE })
+  }
+  label()
+  onLocaleChange(label)
 }
 
 function registerServiceWorker(): void {
