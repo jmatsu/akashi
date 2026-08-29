@@ -1,3 +1,4 @@
+import { execFileSync } from 'node:child_process'
 import { createHash } from 'node:crypto'
 import { defineConfig } from 'vite'
 import type { Plugin } from 'vite'
@@ -21,6 +22,21 @@ const DEV_CSP: Directives = {
   'script-src': ["'unsafe-inline'"],
   'style-src': ["'unsafe-inline'"],
   'connect-src': ['ws:'],
+}
+
+/**
+ * Which commit the bundle is. A host that checks out without git history hands
+ * its own SHA over in `AKASHI_BUILD_SHA`; a copy of the source with no git at
+ * all still builds, and says so.
+ */
+function buildSha(): string {
+  const given = process.env.AKASHI_BUILD_SHA
+  if (given) return given.slice(0, 7)
+  try {
+    return execFileSync('git', ['rev-parse', '--short=7', 'HEAD'], { encoding: 'utf8' }).trim()
+  } catch {
+    return 'unknown'
+  }
 }
 
 /** The no-network barrier, stated in `src/csp.ts` and enforced by the browser. */
@@ -99,6 +115,10 @@ function localizedManifests(): Plugin {
 
 export default defineConfig({
   base,
+  define: {
+    __BUILD_SHA__: JSON.stringify(buildSha()),
+    __BUILD_DATE__: JSON.stringify(new Date().toISOString().slice(0, 10)),
+  },
   build: {
     target: 'es2022',
     // The wasm module is small; keeping it as an asset lets the service worker

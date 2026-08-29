@@ -52,6 +52,8 @@ export const en = {
   'menu.file': 'File',
   'menu.export': 'Export',
   'menu.repo': 'Source code',
+  // The date is ISO, so it reads the same in every locale.
+  'menu.build': 'Build {sha} · {date}',
 
   // --- app regions ------------------------------------------------------
   'region.apps': 'Apps',

@@ -68,6 +68,11 @@ jobs:
       - run: npm ci
       # wasm-pack, then `tsc --noEmit`, then the bundle.
       - run: npm run build
+        env:
+          # The build stamp links to a commit, and a pull request is built from
+          # a merge commit that exists nowhere anyone could open -- so the head
+          # is what the stamp names, the same commit the preview comment prints.
+          AKASHI_BUILD_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
       # Nothing waits on ci.yml here, so the test that holds `dist/` to the
       # no-network policy has to gate the live site itself.
       - run: npm run test:web
