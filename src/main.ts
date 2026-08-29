@@ -1,5 +1,6 @@
 import { must } from './dom'
 import { LOCALES, initI18n, isLocale, locale, localeName, setLocale } from './i18n'
+import { wireMenus } from './menu'
 import { startRouter } from './router'
 import { wasmReady } from './wasm'
 import './style.css'
@@ -16,6 +17,7 @@ async function boot(): Promise<void> {
   // Before anything reads a string, so the chrome is never shown in the wrong
   // language.
   initI18n()
+  wireMenus()
   wireLanguage()
 
   await startRouter()

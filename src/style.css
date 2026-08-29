@@ -93,21 +93,118 @@ button {
   display: none;
 }
 
+/* The app mark, which is also the button for the menu the whole product --
+   rather than any one app -- hangs off. */
 .brand {
   display: flex;
   align-items: center;
-  gap: 6px;
-  font-weight: 700;
-  font-size: 15px;
-  letter-spacing: 0.06em;
+  padding: 4px;
+  border: 1px solid transparent;
+  border-radius: var(--radius);
+  background: transparent;
+  cursor: pointer;
   flex: none;
 }
 
-.brand .dot {
-  width: 10px;
-  height: 10px;
-  border-radius: 50%;
+.brand:hover {
+  border-color: var(--line);
+}
+
+/* --- drop menus --------------------------------------------------------- */
+
+.menu {
+  flex: none;
+}
+
+/* The panel is placed by `src/menu.ts` and drawn in the top layer, so the
+   header's sideways scroll neither clips it nor carries it about. */
+.menu-popup[popover] {
+  position: fixed;
+  inset: auto;
+  margin: 0;
+  min-width: 200px;
+  max-width: calc(100vw - 16px);
+  padding: 6px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--panel);
+  color: var(--text);
+  box-shadow: 0 8px 24px rgb(0 0 0 / 45%);
+}
+
+/* Stated only for the open state: the closed one is the browser's own
+   `display: none`, which an author rule here would otherwise outrank. */
+.menu-popup:popover-open {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.menu-button::after {
+  content: " \25be";
+}
+
+.menu-heading {
+  margin: 2px 8px 6px;
+  font-weight: 700;
+  font-size: 15px;
+  letter-spacing: 0.06em;
+}
+
+.menu-popup .menu-item {
+  min-height: var(--tap);
+  padding: 0 10px;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  text-align: left;
+  cursor: pointer;
+}
+
+.menu-popup .menu-item:hover:not(:disabled) {
+  background: var(--panel-hi);
+}
+
+.menu-popup .menu-item:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+.menu-popup .menu-item.primary {
   background: var(--accent);
+  color: var(--accent-ink);
+  font-weight: 600;
+}
+
+.menu-row {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 6px 10px;
+  color: var(--muted);
+}
+
+.menu-field {
+  min-height: 32px;
+  padding: 0 8px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--panel-hi);
+  color: var(--text);
+  font: inherit;
+}
+
+.menu-field::placeholder {
+  color: var(--muted);
+}
+
+.menu-field:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: -1px;
+}
+
+select.menu-field {
+  cursor: pointer;
 }
 
 /* The app switcher: the one control that outranks whatever app is on screen,
@@ -177,46 +274,6 @@ button {
   border-color: var(--accent);
   color: var(--accent-ink);
   font-weight: 600;
-}
-
-/* What the exports are named. Sized for a short name, and it gives way first
-   when the bar is tight -- the buttons either side of it are the ones that have
-   to stay reachable. */
-#name {
-  flex: 0 1 160px;
-  min-width: 90px;
-  min-height: 32px;
-  padding: 0 8px;
-  border: 1px solid var(--line);
-  border-radius: var(--radius);
-  background: var(--panel-hi);
-  color: inherit;
-  font: inherit;
-}
-
-#name::placeholder {
-  color: var(--muted);
-}
-
-#name:focus-visible {
-  outline: 2px solid var(--accent);
-  outline-offset: -1px;
-}
-
-/* The language picker sits with the actions and matches their chrome. */
-#lang {
-  min-height: 32px;
-  padding: 0 6px;
-  border: 1px solid var(--line);
-  border-radius: var(--radius);
-  background: var(--panel-hi);
-  color: inherit;
-  font: inherit;
-  cursor: pointer;
-}
-
-#lang:hover {
-  border-color: var(--muted);
 }
 
 .sep {
