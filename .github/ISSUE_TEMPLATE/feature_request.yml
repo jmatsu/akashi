@@ -1,0 +1,30 @@
+name: Idea
+description: Something Akashi should do, or do differently
+labels: ['enhancement']
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Akashi is deliberately small: lightweight tools for what people do to a
+        screenshot or a recording before it goes into a ticket. An idea that
+        needs a backend, an account, a network request or a new dependency is
+        against the [Principles](https://github.com/jmatsu/akashi#principles)
+        and will be declined however good it is.
+  - type: textarea
+    id: problem
+    attributes:
+      label: What are you trying to do
+      description: The task in front of you, not the feature — what were you doing when Akashi got in the way?
+    validations:
+      required: true
+  - type: textarea
+    id: idea
+    attributes:
+      label: What you have in mind
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: What you do instead today
+      description: The tool, the workaround, or the step you take now.

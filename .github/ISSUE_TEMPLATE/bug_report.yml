@@ -1,0 +1,59 @@
+name: Bug report
+description: Something in Akashi does not work the way it should
+labels: ['bug']
+body:
+  - type: markdown
+    attributes:
+      value: |
+        A vulnerability goes through [a security advisory](https://github.com/jmatsu/akashi/security/advisories/new)
+        instead, not a public issue.
+  - type: dropdown
+    id: app
+    attributes:
+      label: Which app
+      options:
+        - Annotate
+        - GIF
+        - Both, or neither in particular
+    validations:
+      required: true
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened
+      description: What you did, what you expected, and what you got instead.
+      placeholder: |
+        1. Dropped a PNG in
+        2. Drew a mosaic over the address bar
+        3. Exported — the mosaic is in the wrong place
+    validations:
+      required: true
+  - type: input
+    id: environment
+    attributes:
+      label: Browser and OS
+      placeholder: Safari 18.3 on iOS 18.3 / Chrome 132 on Windows 11
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: Where you ran it
+      description: The hosted app, or your own build — and the commit if you know it.
+      placeholder: https://akashi.jmatsu.dev
+    validations:
+      required: true
+  - type: textarea
+    id: file
+    attributes:
+      label: The file that triggers it
+      description: |
+        Only if one is needed, and only if it is yours to share. Do not attach a
+        screenshot of anything confidential — a redacted or synthetic file that
+        reproduces the bug is worth more than the original.
+  - type: textarea
+    id: console
+    attributes:
+      label: Console output
+      description: Anything the browser console printed. Pasted as-is; it is formatted for you.
+      render: text
