@@ -743,6 +743,7 @@ export class Editor {
           text: '',
           size: s.fontSize,
           color: s.color,
+          outline: s.outline,
         }
       case 'emoji':
         return {
@@ -752,9 +753,17 @@ export class Editor {
           y: doc.y - s.emojiSize / 2,
           size: s.emojiSize,
           char: s.emoji,
+          outline: s.outline,
         }
       case 'marker':
-        return { id, type: 'marker', points: [doc], color: s.color, width: s.markerWidth }
+        return {
+          id,
+          type: 'marker',
+          points: [doc],
+          color: s.color,
+          width: s.markerWidth,
+          outline: s.outline,
+        }
       case 'arrow':
         return {
           id,
@@ -766,6 +775,7 @@ export class Editor {
           color: s.color,
           width: s.arrowWidth,
           style: s.arrowStyle,
+          outline: s.outline,
         }
       case 'region':
         return {
@@ -792,6 +802,7 @@ export class Editor {
           strokeWidth: s.strokeWidth,
           fill: s.fill,
           lockAspect: this.tool === 'circle',
+          outline: s.outline,
         }
       case 'select':
         return null

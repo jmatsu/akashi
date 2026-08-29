@@ -153,7 +153,13 @@ export function sanitizeDoc(value: unknown): Doc | null {
   if (!Array.isArray(objects)) return null
   // The name becomes a file on this device, so it is cleaned rather than
   // merely type-checked.
-  return { width, height, background, name: cleanName(name), objects: objects.filter(isObj) }
+  return {
+    width,
+    height,
+    background,
+    name: cleanName(name),
+    objects: objects.map(fillNewerFields).filter(isObj),
+  }
 }
 
 type Check<T> = (v: unknown) => v is T
@@ -187,8 +193,18 @@ type Fields<T extends Obj> = { readonly [F in Exclude<keyof T, 'id' | 'type'>]: 
  * wrong type, does not compile.
  */
 const OBJ_FIELDS: { readonly [K in ObjType]: Fields<ObjOf<K>> } = {
-  text: { x: num, y: num, text: str, size: num, color: str },
-  rect: { x: num, y: num, w: num, h: num, stroke: str, strokeWidth: num, fill: strOrNull, lockAspect: bool },
+  text: { x: num, y: num, text: str, size: num, color: str, outline: strOrNull },
+  rect: {
+    x: num,
+    y: num,
+    w: num,
+    h: num,
+    stroke: str,
+    strokeWidth: num,
+    fill: strOrNull,
+    lockAspect: bool,
+    outline: strOrNull,
+  },
   ellipse: {
     x: num,
     y: num,
@@ -198,11 +214,35 @@ const OBJ_FIELDS: { readonly [K in ObjType]: Fields<ObjOf<K>> } = {
     strokeWidth: num,
     fill: strOrNull,
     lockAspect: bool,
+    outline: strOrNull,
   },
-  arrow: { x1: num, y1: num, x2: num, y2: num, color: str, width: num, style: oneOf(ARROW_STYLES) },
-  marker: { points, color: str, width: num },
-  emoji: { x: num, y: num, size: num, char: str },
+  arrow: {
+    x1: num,
+    y1: num,
+    x2: num,
+    y2: num,
+    color: str,
+    width: num,
+    style: oneOf(ARROW_STYLES),
+    outline: strOrNull,
+  },
+  marker: { points, color: str, width: num, outline: strOrNull },
+  emoji: { x: num, y: num, size: num, char: str, outline: strOrNull },
   region: { x: num, y: num, w: num, h: num, mode: oneOf(REGION_MODES), strength: num },
+}
+
+/**
+ * A field younger than the draft written: `outline` postdates the format, so a
+ * draft from an earlier build simply lacks it. Filling it in beats bumping the
+ * version, which would refuse the whole file over a field whose absence has an
+ * obvious reading -- no outline.
+ */
+function fillNewerFields(value: unknown): unknown {
+  if (!isRecord(value) || typeof value.type !== 'string') return value
+  if (!Object.hasOwn(OBJ_FIELDS, value.type)) return value
+  const fields: Record<string, unknown> = OBJ_FIELDS[value.type as ObjType]
+  if (!Object.hasOwn(fields, 'outline') || value.outline !== undefined) return value
+  return { ...value, outline: null }
 }
 
 function isObj(value: unknown): value is Obj {

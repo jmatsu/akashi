@@ -7,6 +7,21 @@ import { applyRegion } from './region'
 const MARKER_ALPHA = 0.45
 
 /**
+ * How far an outline reaches beyond what it emphasises, as a share of that
+ * object's own weight -- a stroke's width, or a glyph's size. Stated per kind
+ * because those weights differ by an order of magnitude: the share that frames
+ * a hairline arrow would swallow an 80px highlighter.
+ */
+const OUTLINE_SHARE = { stroke: 0.5, marker: 0.15, text: 0.07, emoji: 0.08 }
+
+/** Below this an outline is thin enough to alias away at some zoom levels. */
+const MIN_OUTLINE = 2
+
+function outlinePad(weight: number, share: number): number {
+  return Math.max(weight * share, MIN_OUTLINE)
+}
+
+/**
  * Draw the whole document into `ctx` at 1:1, with no transform applied. The
  * editor keeps a scene canvas exactly this size, blits it under the pan/zoom
  * transform, and exports it directly. Region effects need `getImageData`, which
@@ -70,6 +85,13 @@ function drawShape(ctx: CanvasRenderingContext2D, o: ShapeObj): void {
     ctx.fillStyle = o.fill
     ctx.fill()
   }
+  // A wider stroke under the real one, so the outline shows on both sides of
+  // it -- and frames the fill of a shape drawn with no stroke at all.
+  if (o.outline) {
+    ctx.strokeStyle = o.outline
+    ctx.lineWidth = o.strokeWidth + outlinePad(o.strokeWidth, OUTLINE_SHARE.stroke) * 2
+    ctx.stroke()
+  }
   if (o.strokeWidth > 0) {
     ctx.strokeStyle = o.stroke
     ctx.lineWidth = o.strokeWidth
@@ -85,11 +107,31 @@ function drawArrow(ctx: CanvasRenderingContext2D, o: ArrowObj): void {
   const angle = Math.atan2(dy, dx)
   const head = Math.max(o.width * 3, 12)
 
-  ctx.strokeStyle = o.color
-  ctx.fillStyle = o.color
-  ctx.lineWidth = o.width
   ctx.lineCap = 'round'
   ctx.lineJoin = 'round'
+  if (o.outline) {
+    paintArrow(ctx, o, angle, len, head, o.outline, outlinePad(o.width, OUTLINE_SHARE.stroke))
+  }
+  paintArrow(ctx, o, angle, len, head, o.color, 0)
+}
+
+/**
+ * One pass over the arrow, `pad` wider all round. The outline is the same arrow
+ * drawn fatter underneath, which keeps the head where the geometry says it is
+ * rather than growing a second, differently-shaped one.
+ */
+function paintArrow(
+  ctx: CanvasRenderingContext2D,
+  o: ArrowObj,
+  angle: number,
+  len: number,
+  head: number,
+  color: string,
+  pad: number,
+): void {
+  ctx.strokeStyle = color
+  ctx.fillStyle = color
+  ctx.lineWidth = o.width + pad * 2
 
   // A filled head would show the shaft poking through its tip, so the shaft
   // stops where the head begins -- at both ends for a double-headed arrow.
@@ -104,8 +146,8 @@ function drawArrow(ctx: CanvasRenderingContext2D, o: ArrowObj): void {
   if (o.style === 'line') {
     drawOpenHead(ctx, o.x2, o.y2, angle, head)
   } else {
-    drawSolidHead(ctx, o.x2, o.y2, angle, head)
-    if (o.style === 'double') drawSolidHead(ctx, o.x1, o.y1, angle + Math.PI, head)
+    drawSolidHead(ctx, o.x2, o.y2, angle, head, pad)
+    if (o.style === 'double') drawSolidHead(ctx, o.x1, o.y1, angle + Math.PI, head, pad)
   }
 }
 
@@ -131,6 +173,7 @@ function drawSolidHead(
   y: number,
   angle: number,
   head: number,
+  pad: number,
 ): void {
   ctx.beginPath()
   ctx.moveTo(x, y)
@@ -138,14 +181,18 @@ function drawSolidHead(
   ctx.lineTo(x - Math.cos(angle) * head * 0.72, y - Math.sin(angle) * head * 0.72)
   ctx.lineTo(x - Math.cos(angle + HEAD_SPREAD) * head, y - Math.sin(angle + HEAD_SPREAD) * head)
   ctx.closePath()
+  // A stroke reaches half in and half out, so tracing the head grows it by
+  // `pad` all round while it keeps its shape.
+  if (pad > 0) {
+    ctx.lineWidth = pad * 2
+    ctx.stroke()
+  }
   ctx.fill()
 }
 
 function drawMarker(ctx: CanvasRenderingContext2D, o: MarkerObj): void {
   if (o.points.length === 0) return
   ctx.globalAlpha = MARKER_ALPHA
-  ctx.strokeStyle = o.color
-  ctx.lineWidth = o.width
   ctx.lineCap = 'round'
   ctx.lineJoin = 'round'
   ctx.beginPath()
@@ -156,6 +203,15 @@ function drawMarker(ctx: CanvasRenderingContext2D, o: MarkerObj): void {
   } else {
     for (let i = 1; i < o.points.length; i++) ctx.lineTo(o.points[i].x, o.points[i].y)
   }
+  // Under the same alpha as the stroke it edges: a highlighter that turned
+  // opaque at its rim would stop reading as a highlighter.
+  if (o.outline) {
+    ctx.strokeStyle = o.outline
+    ctx.lineWidth = o.width + outlinePad(o.width, OUTLINE_SHARE.marker) * 2
+    ctx.stroke()
+  }
+  ctx.strokeStyle = o.color
+  ctx.lineWidth = o.width
   ctx.stroke()
 }
 
@@ -163,9 +219,17 @@ function drawText(ctx: CanvasRenderingContext2D, o: TextObj): void {
   ctx.font = textFont(o.size)
   ctx.textBaseline = 'top'
   ctx.fillStyle = o.color
+  if (o.outline) {
+    ctx.strokeStyle = o.outline
+    ctx.lineWidth = outlinePad(o.size, OUTLINE_SHARE.text) * 2
+    // Round joins, or a sharp corner of a glyph grows a spike of its own.
+    ctx.lineJoin = 'round'
+  }
   const lineHeight = o.size * TEXT_LINE_HEIGHT
   o.text.split('\n').forEach((line, i) => {
-    ctx.fillText(line, o.x, o.y + i * lineHeight)
+    const y = o.y + i * lineHeight
+    if (o.outline) ctx.strokeText(line, o.x, y)
+    ctx.fillText(line, o.x, y)
   })
 }
 
@@ -173,8 +237,19 @@ function drawEmoji(ctx: CanvasRenderingContext2D, o: EmojiObj): void {
   ctx.font = emojiFont(o.size)
   ctx.textBaseline = 'top'
   ctx.textAlign = 'left'
+  // A colour emoji is a bitmap glyph with no path to stroke, so its outline is
+  // a shadow instead -- laid down repeatedly, because one pass of a blur is
+  // too faint to read as an edge.
+  if (o.outline) {
+    ctx.shadowColor = o.outline
+    ctx.shadowBlur = outlinePad(o.size, OUTLINE_SHARE.emoji) * 2
+    for (let i = 0; i < EMOJI_OUTLINE_PASSES; i++) ctx.fillText(o.char, o.x, o.y)
+    ctx.shadowColor = 'transparent'
+  }
   ctx.fillText(o.char, o.x, o.y)
 }
+
+const EMOJI_OUTLINE_PASSES = 3
 
 function drawRegion(ctx: CanvasRenderingContext2D, o: RegionObj, doc: Doc): void {
   const r = normalize(o)
