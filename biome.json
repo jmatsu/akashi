@@ -5,6 +5,7 @@
       "src/**",
       "test/**",
       "scripts/**",
+      "experiments/**",
       "index.html",
       ".github/workflows/gh-pages-redirect/**",
       "vite.config.ts",

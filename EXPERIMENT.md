@@ -41,3 +41,19 @@ that.
 
 Redaction is not exposed: `apply_region` is an editor interaction, not a
 conversion.
+
+## A draft over WebUSB
+
+Whether the browser could carry a `.akashi` across the cable itself, instead of
+handing it to AirDrop or a file manager. It can: the page speaks ADB to an
+Android phone — the handshake, the signature adbd asks for, and `sync:` to push
+or pull a draft — and it does so without a request, so nothing in `src/csp.ts`
+or `biome.json` had to give.
+
+It reaches Chromium on a desktop paired with an Android phone in developer mode,
+and nothing else: WebUSB is not in Safari or Firefox, so no iOS at all, and USB
+roles rule desktop-to-desktop out entirely. Asking for whole-device access to
+move a screenshot is the wrong trade, so it stays here.
+
+[`experiments/webusb-draft`](experiments/webusb-draft/README.md) has the
+prototype and the full findings; `npm run dev:webusb` runs the page.

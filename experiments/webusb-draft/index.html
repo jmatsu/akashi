@@ -1,0 +1,123 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Akashi · WebUSB draft transfer</title>
+    <style>
+      :root {
+        color-scheme: dark;
+        --ink: #e8e8ea;
+        --dim: #9a9aa2;
+        --bg: #1b1d21;
+        --panel: #24272c;
+        --accent: #df6757;
+      }
+      body {
+        margin: 0;
+        padding: 24px;
+        background: var(--bg);
+        color: var(--ink);
+        font: 14px/1.5 system-ui, sans-serif;
+      }
+      main {
+        max-width: 900px;
+        margin: 0 auto;
+      }
+      h1 {
+        font-size: 18px;
+        margin: 0 0 4px;
+      }
+      p {
+        color: var(--dim);
+        margin: 0 0 20px;
+      }
+      fieldset {
+        border: 1px solid #34383f;
+        border-radius: 8px;
+        margin: 0 0 12px;
+        padding: 12px;
+      }
+      legend {
+        color: var(--dim);
+        padding: 0 6px;
+      }
+      button {
+        background: var(--panel);
+        color: var(--ink);
+        border: 1px solid #3c414a;
+        border-radius: 6px;
+        padding: 6px 12px;
+        font: inherit;
+        cursor: pointer;
+      }
+      button:hover {
+        border-color: var(--accent);
+      }
+      input[type='text'] {
+        background: var(--panel);
+        color: var(--ink);
+        border: 1px solid #3c414a;
+        border-radius: 6px;
+        padding: 6px 8px;
+        font: inherit;
+        min-width: 280px;
+      }
+      label {
+        color: var(--dim);
+        margin-right: 8px;
+      }
+      pre {
+        background: #101215;
+        border: 1px solid #34383f;
+        border-radius: 8px;
+        padding: 12px;
+        height: 340px;
+        overflow: auto;
+        white-space: pre-wrap;
+        font: 12px/1.45 ui-monospace, monospace;
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1>WebUSB draft transfer</h1>
+      <p>
+        An experiment, not part of Akashi. It asks whether a <code>.akashi</code> draft can cross a cable
+        without a server: Chrome as the USB host, an Android phone with USB debugging as the device.
+        Stop your local <code>adb</code> server first — it holds the interface this page needs.
+      </p>
+
+      <fieldset>
+        <legend>1 · device</legend>
+        <button id="pick-any" type="button">Pick any device</button>
+        <button id="pick-adb" type="button">Pick an adb device</button>
+        <button id="claimability" type="button">Test what is claimable</button>
+      </fieldset>
+
+      <fieldset>
+        <legend>2 · connect</legend>
+        <button id="connect" type="button">adb connect</button>
+      </fieldset>
+
+      <fieldset>
+        <legend>3 · transfer</legend>
+        <p>
+          <label for="dir">Directory</label><input id="dir" type="text" />
+          <button id="list" type="button">List</button>
+        </p>
+        <p>
+          <label for="file">Push</label><input id="file" type="file" />
+          <button id="push" type="button">Push to the directory</button>
+        </p>
+        <p>
+          <label for="path">Pull</label><input id="path" type="text" placeholder="/sdcard/Download/x.akashi" />
+          <button id="pull" type="button">Pull to this computer</button>
+        </p>
+      </fieldset>
+
+      <pre id="log"></pre>
+    </main>
+    <script type="module" src="./main.ts"></script>
+  </body>
+</html>
