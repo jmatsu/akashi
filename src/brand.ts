@@ -7,7 +7,7 @@
 /** Chrome and plate colour. */
 export const INK = '#1b1d21'
 /** The accent: the app mark, and the colour you draw with by default. */
-export const ACCENT = '#e2483d'
+export const ACCENT = '#df6757'
 export const PAPER = '#ffffff'
 
 export interface IconSpec {
