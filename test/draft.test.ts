@@ -1,8 +1,14 @@
 import { strict as assert } from 'node:assert'
 import { test } from 'node:test'
-import { decodeDraft, DRAFT_CHUNK, encodeDraft, mayCarryDraft, sanitizeDoc } from '../src/draft.ts'
-import type { Draft } from '../src/draft.ts'
-import type { ArrowObj, Doc, ShapeObj } from '../src/types.ts'
+import {
+  decodeDraft,
+  DRAFT_CHUNK,
+  encodeDraft,
+  mayCarryDraft,
+  sanitizeDoc,
+} from '../src/apps/editor/draft.ts'
+import type { Draft } from '../src/apps/editor/draft.ts'
+import type { ArrowObj, Doc, ShapeObj } from '../src/apps/editor/types.ts'
 
 /**
  * A PNG small enough to write by hand: signature, IHDR, one IDAT, IEND. The

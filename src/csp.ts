@@ -11,7 +11,7 @@
 export type Directives = Readonly<Record<string, readonly string[]>>
 
 export const CSP: Directives = {
-  // Anything not named below is denied outright: frames, media, fonts, objects.
+  // Anything not named below is denied outright: frames, fonts, objects.
   'default-src': ["'none'"],
   // The bundle and the service worker registration. Compiling the wasm core
   // counts as eval, and has to be granted separately.
@@ -19,6 +19,9 @@ export const CSP: Directives = {
   'style-src': ["'self'"],
   // `blob:` and `data:` are the app's own bytes; neither can name a host.
   'img-src': ["'self'", 'blob:', 'data:'],
+  // The converter plays the clip you opened, which reaches the `<video>` as a
+  // blob of the file's own bytes -- it is never uploaded to be played back.
+  'media-src': ["'self'", 'blob:'],
   // The only directive that can reach a network at all, and it reaches exactly
   // one origin: the wasm module, and the assets the service worker precaches.
   'connect-src': ["'self'"],

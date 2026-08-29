@@ -9,9 +9,9 @@ import {
   onRectBorder,
   resize,
   translate,
-} from '../src/geom.ts'
-import type { Measure } from '../src/geom.ts'
-import type { ArrowObj, EmojiObj, MarkerObj, RegionObj, ShapeObj, TextObj } from '../src/types.ts'
+} from '../src/apps/editor/geom.ts'
+import type { Measure } from '../src/apps/editor/geom.ts'
+import type { ArrowObj, EmojiObj, MarkerObj, RegionObj, ShapeObj, TextObj } from '../src/apps/editor/types.ts'
 
 /** Ten units per character, so expected widths are obvious by eye. */
 const measure: Measure = (lines) => Math.max(0, ...lines.map((l) => l.length * 10))

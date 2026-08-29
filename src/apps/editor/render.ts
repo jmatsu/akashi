@@ -1,7 +1,7 @@
 import { bounds, emojiFont, handlesOf, normalize, TEXT_LINE_HEIGHT, textFont } from './geom'
 import type { Handle, Measure, Rect } from './geom'
 import type { Doc, ArrowObj, MarkerObj, Obj, Pt, RegionObj, ShapeObj, TextObj, EmojiObj } from './types'
-import { applyRegion } from './wasm'
+import { applyRegion } from './region'
 
 /** Highlighter strokes are translucent so the pixels under them stay readable. */
 const MARKER_ALPHA = 0.45

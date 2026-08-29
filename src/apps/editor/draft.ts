@@ -15,9 +15,9 @@
 
 // `png.ts` is named with its extension because the icon script and the tests
 // load these modules through Node, which does not guess at one.
-import { cleanName } from './filename.ts'
-import { PNG_SIGNATURE, chunk, isPng, readChunks } from './png.ts'
-import type { Bytes } from './png.ts'
+import { cleanName } from '../../filename.ts'
+import { PNG_SIGNATURE, chunk, isPng, readChunks } from '../../png.ts'
+import type { Bytes } from '../../png.ts'
 import type { ArrowStyle, Doc, Obj, ObjOf, ObjType, Pt, RegionMode } from './types'
 
 /**

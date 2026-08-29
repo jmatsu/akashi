@@ -1,7 +1,7 @@
 /** The document model. Everything here is plain JSON so history snapshots and
  *  session persistence are a `structuredClone` / `JSON.stringify` away. */
 
-import { ACCENT, PAPER } from './brand'
+import { ACCENT, PAPER } from '../../brand'
 
 export type ToolId =
   | 'select'

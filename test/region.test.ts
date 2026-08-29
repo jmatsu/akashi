@@ -2,8 +2,8 @@ import { strict as assert } from 'node:assert'
 import { test } from 'node:test'
 import { readFileSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
-import { MODE } from '../src/wasm.ts'
-import type { RegionMode } from '../src/types.ts'
+import { MODE } from '../src/apps/editor/region.ts'
+import type { RegionMode } from '../src/apps/editor/types.ts'
 
 /**
  * Exercises the wasm core through the generated bindings and the app's own
