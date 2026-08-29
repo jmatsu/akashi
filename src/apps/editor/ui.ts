@@ -1,3 +1,4 @@
+import { PAPER } from '../../brand'
 import type { Editor } from './editor'
 import { EMOJI } from './emoji'
 import { onLocaleChange, t } from '../../i18n'
@@ -282,6 +283,29 @@ export function buildUI(editor: Editor, root: { tools: HTMLElement; options: HTM
     () => editor.settings.fill,
     (fill) => editor.updateSettings({ fill }),
   )
+
+  // --- outline ----------------------------------------------------------
+  {
+    const body = choice<string | null>(
+      'outline',
+      'option.outline',
+      [{ value: null, cls: 'chip', htmlKey: 'option.outlineNone' }, ...swatches()],
+      () => editor.settings.outline,
+      (outline) => editor.updateSettings({ outline }),
+    )
+    const picker = el('input', 'picker')
+    picker.type = 'color'
+    picker.addEventListener('input', () => editor.updateSettings({ outline: picker.value }))
+    body.appendChild(picker)
+    text.push(() => {
+      picker.title = t('option.outlineCustom')
+    })
+    sync.push(() => {
+      // The picker cannot say "no outline", so it rests on the paper colour --
+      // the one most often wanted -- until a swatch or the picker sets one.
+      picker.value = editor.settings.outline ?? PAPER
+    })
+  }
 
   // --- numeric sliders --------------------------------------------------
   const slider = (

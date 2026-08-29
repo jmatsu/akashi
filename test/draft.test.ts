@@ -50,6 +50,7 @@ const arrow: ArrowObj = {
   color: '#ff0000',
   width: 6,
   style: 'solid',
+  outline: null,
 }
 
 const rect: ShapeObj = {
@@ -63,6 +64,7 @@ const rect: ShapeObj = {
   strokeWidth: 4,
   fill: null,
   lockAspect: false,
+  outline: null,
 }
 
 const doc: Doc = { width: 800, height: 600, background: null, name: 'bug-repro', objects: [arrow, rect] }
@@ -202,10 +204,25 @@ test('a marker keeps its points and loses them if they are not points', () => {
     { x: 1, y: 2 },
     { x: 3, y: 4 },
   ]
-  const good = { id: 'm1', type: 'marker', points, color: '#000000', width: 16 }
-  const bad = { id: 'm2', type: 'marker', points: [{ x: 1 }], color: '#000000', width: 16 }
+  const good = { id: 'm1', type: 'marker', points, color: '#000000', width: 16, outline: null }
+  const bad = { id: 'm2', type: 'marker', points: [{ x: 1 }], color: '#000000', width: 16, outline: null }
   const sane = sanitizeDoc({ width: 10, height: 10, background: null, objects: [good, bad] })
   assert.deepEqual(sane?.objects, [good])
+})
+
+test('an outline colour travels with the object it emphasises', () => {
+  const outlined = { ...rect, id: 'r3', outline: '#ffffff' }
+  const decoded = decodeDraft(carry(fakePng(), { doc: { ...doc, objects: [outlined] }, image: null }))
+  assert.deepEqual(decoded?.doc.objects, [outlined])
+  assert.equal(sanitizeDoc({ ...doc, objects: [{ ...rect, outline: 7 }] })?.objects.length, 0)
+})
+
+test('a draft written before outlines opens without one', () => {
+  // The field postdates the format, so it is simply absent over there; the
+  // objects around it must survive the trip all the same.
+  const { outline: _, ...older } = rect
+  const sane = sanitizeDoc({ width: 800, height: 600, background: null, objects: [older] })
+  assert.deepEqual(sane?.objects, [{ ...rect, outline: null }])
 })
 
 test('an object naming a method of Object is not an object', () => {

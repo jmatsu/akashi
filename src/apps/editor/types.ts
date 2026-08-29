@@ -24,6 +24,14 @@ export interface Pt {
   y: number
 }
 
+/**
+ * A contrasting halo drawn behind an object, or `null` for none: what keeps an
+ * annotation readable over a screenshot it happens to share a colour with. Its
+ * thickness is derived from the object's own weight, so it needs no control of
+ * its own -- see `OUTLINE_SHARE` in `render.ts`.
+ */
+type Outline = string | null
+
 interface ObjBase {
   id: string
 }
@@ -36,6 +44,7 @@ export interface TextObj extends ObjBase {
   text: string
   size: number
   color: string
+  outline: Outline
 }
 
 /** Rectangles and ellipses share every field; `lockAspect` is what the circle
@@ -51,6 +60,7 @@ export interface ShapeObj extends ObjBase {
   /** `null` means no fill. */
   fill: string | null
   lockAspect: boolean
+  outline: Outline
 }
 
 export interface ArrowObj extends ObjBase {
@@ -62,6 +72,7 @@ export interface ArrowObj extends ObjBase {
   color: string
   width: number
   style: ArrowStyle
+  outline: Outline
 }
 
 export interface MarkerObj extends ObjBase {
@@ -69,6 +80,7 @@ export interface MarkerObj extends ObjBase {
   points: Pt[]
   color: string
   width: number
+  outline: Outline
 }
 
 export interface EmojiObj extends ObjBase {
@@ -77,6 +89,7 @@ export interface EmojiObj extends ObjBase {
   y: number
   size: number
   char: string
+  outline: Outline
 }
 
 export interface RegionObj extends ObjBase {
@@ -133,6 +146,7 @@ export const BLANK_DOC: { width: number; height: number; background: string } = 
 export interface Settings {
   color: string
   fill: string | null
+  outline: Outline
   strokeWidth: number
   fontSize: number
   markerWidth: number
@@ -160,6 +174,7 @@ export const PALETTE: readonly string[] = [
 export const DEFAULT_SETTINGS: Settings = {
   color: ACCENT,
   fill: null,
+  outline: null,
   strokeWidth: 4,
   fontSize: 32,
   markerWidth: 16,
@@ -188,29 +203,35 @@ export const STYLE_FIELDS: {
   text: [
     ['color', 'color'],
     ['size', 'fontSize'],
+    ['outline', 'outline'],
   ],
   rect: [
     ['stroke', 'color'],
     ['fill', 'fill'],
     ['strokeWidth', 'strokeWidth'],
+    ['outline', 'outline'],
   ],
   ellipse: [
     ['stroke', 'color'],
     ['fill', 'fill'],
     ['strokeWidth', 'strokeWidth'],
+    ['outline', 'outline'],
   ],
   arrow: [
     ['color', 'color'],
     ['style', 'arrowStyle'],
     ['width', 'arrowWidth'],
+    ['outline', 'outline'],
   ],
   marker: [
     ['color', 'color'],
     ['width', 'markerWidth'],
+    ['outline', 'outline'],
   ],
   emoji: [
     ['char', 'emoji'],
     ['size', 'emojiSize'],
+    ['outline', 'outline'],
   ],
   region: [['mode', 'regionMode']],
 }

@@ -27,6 +27,7 @@ const rect: ShapeObj = {
   strokeWidth: 4,
   fill: null,
   lockAspect: false,
+  outline: null,
 }
 
 test('normalize flips a right-to-left drag', () => {
@@ -83,19 +84,36 @@ test('an arrow is grabbed near its shaft', () => {
     color: '#000',
     width: 4,
     style: 'solid',
+    outline: null,
   }
   assert.equal(hitTest(a, { x: 50, y: 52 }, measure), true)
   assert.equal(hitTest(a, { x: 50, y: 90 }, measure), false)
 })
 
 test('a marker left by a tap still has bounds and can be selected', () => {
-  const m: MarkerObj = { id: 'm', type: 'marker', points: [{ x: 20, y: 20 }], color: '#ff0', width: 10 }
+  const m: MarkerObj = {
+    id: 'm',
+    type: 'marker',
+    points: [{ x: 20, y: 20 }],
+    color: '#ff0',
+    width: 10,
+    outline: null,
+  }
   assert.deepEqual(bounds(m, measure), { x: 15, y: 15, w: 10, h: 10 })
   assert.equal(hitTest(m, { x: 22, y: 22 }, measure), true)
 })
 
 test('text bounds use the measured width and the line count', () => {
-  const t: TextObj = { id: 't', type: 'text', x: 5, y: 5, text: 'ab\ncdef', size: 20, color: '#000' }
+  const t: TextObj = {
+    id: 't',
+    type: 'text',
+    x: 5,
+    y: 5,
+    text: 'ab\ncdef',
+    size: 20,
+    color: '#000',
+    outline: null,
+  }
   assert.deepEqual(bounds(t, measure), { x: 5, y: 5, w: 40, h: 50 })
 })
 
@@ -110,6 +128,7 @@ test('translate moves every geometry kind, recomputed from the drag start', () =
     color: '#000',
     width: 2,
     style: 'line',
+    outline: null,
   }
   const a: ArrowObj = { ...before }
   translate(a, before, 5, -5)
@@ -118,7 +137,14 @@ test('translate moves every geometry kind, recomputed from the drag start', () =
   translate(a, before, 1, 1)
   assert.deepEqual([a.x1, a.y1, a.x2, a.y2], [1, 1, 11, 11])
 
-  const mBefore: MarkerObj = { id: 'm', type: 'marker', points: [{ x: 1, y: 1 }], color: '#000', width: 2 }
+  const mBefore: MarkerObj = {
+    id: 'm',
+    type: 'marker',
+    points: [{ x: 1, y: 1 }],
+    color: '#000',
+    width: 2,
+    outline: null,
+  }
   const m: MarkerObj = { ...mBefore, points: [{ x: 1, y: 1 }] }
   translate(m, mBefore, 2, 3)
   assert.deepEqual(m.points, [{ x: 3, y: 4 }])
@@ -162,6 +188,7 @@ test('shift squares off a shape and snaps an arrow to 45 degrees', () => {
     color: '#000',
     width: 2,
     style: 'line',
+    outline: null,
   }
   const a: ArrowObj = { ...aStart }
   resize(a, aStart, 'p2', { x: 100, y: 10 }, true)
@@ -170,7 +197,7 @@ test('shift squares off a shape and snaps an arrow to 45 degrees', () => {
 })
 
 test('an emoji scales uniformly from its fixed corner', () => {
-  const start: EmojiObj = { id: 'e', type: 'emoji', x: 10, y: 10, size: 40, char: '👍' }
+  const start: EmojiObj = { id: 'e', type: 'emoji', x: 10, y: 10, size: 40, char: '👍', outline: null }
   const o: EmojiObj = { ...start }
   resize(o, start, 'se', { x: 110, y: 30 }, false)
   assert.deepEqual([o.x, o.y, o.size], [10, 10, 100])
@@ -195,16 +222,24 @@ test('a click that never became a drag is degenerate', () => {
     color: '#000',
     width: 2,
     style: 'line',
+    outline: null,
   }
   assert.equal(isDegenerate(arrow), true)
   assert.equal(isDegenerate({ ...arrow, x2: 60 }), false)
   // A tap with the marker leaves a deliberate dot, not a stray object.
-  const dot: MarkerObj = { id: 'm', type: 'marker', points: [{ x: 1, y: 1 }], color: '#000', width: 8 }
+  const dot: MarkerObj = {
+    id: 'm',
+    type: 'marker',
+    points: [{ x: 1, y: 1 }],
+    color: '#000',
+    width: 8,
+    outline: null,
+  }
   assert.equal(isDegenerate(dot), false)
 })
 
 test('each type exposes the handles it can actually be dragged by', () => {
-  const emoji: EmojiObj = { id: 'e', type: 'emoji', x: 0, y: 0, size: 10, char: '👍' }
+  const emoji: EmojiObj = { id: 'e', type: 'emoji', x: 0, y: 0, size: 10, char: '👍', outline: null }
   const arrow: ArrowObj = {
     id: 'a',
     type: 'arrow',
@@ -215,8 +250,18 @@ test('each type exposes the handles it can actually be dragged by', () => {
     color: '#000',
     width: 1,
     style: 'line',
+    outline: null,
   }
-  const text: TextObj = { id: 't', type: 'text', x: 0, y: 0, text: 'x', size: 10, color: '#000' }
+  const text: TextObj = {
+    id: 't',
+    type: 'text',
+    x: 0,
+    y: 0,
+    text: 'x',
+    size: 10,
+    color: '#000',
+    outline: null,
+  }
   const handles = (o: Parameters<typeof bounds>[0]): number => handlesOf(o, bounds(o, measure)).length
   assert.equal(handles(rect), 8)
   assert.equal(handles(emoji), 4)

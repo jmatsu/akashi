@@ -39,6 +39,7 @@ not the name.
 | Arrows | Line, single-headed or double-headed. Colour and width |
 | Marker | Translucent highlighter. Width and colour |
 | Stamps | 32 common emoji, resizable |
+| Outline | A contrasting halo behind any of the above, in the colour of your choice, for annotations that would otherwise disappear into the screenshot |
 | Redaction | Mosaic (block size), blackout, or erase to transparent (strength) |
 
 Everything is **non-destructive**. A mosaic is an object like any other: move
