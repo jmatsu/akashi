@@ -190,4 +190,4 @@ the visible one and so never reach an export.
 
 ## License
 
-MIT
+Apache License 2.0. See [LICENSE](LICENSE) and [NOTICE](NOTICE).
