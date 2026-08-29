@@ -51,12 +51,18 @@ button {
   height: 100vh;
   /* biome-ignore lint/suspicious/noDuplicateProperties: the vh above is the fallback for browsers without dvh. */
   height: 100dvh;
-  grid-template-rows: auto 1fr;
+  /* Header, the install offer, and the app. The middle row is empty -- and so
+     zero-height -- whenever the offer is not standing. */
+  grid-template-rows: auto auto 1fr;
   padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom)
     env(safe-area-inset-left);
 }
 
+/* Named rather than left to flow: the bar between is `[hidden]` most of the
+   time, and a panel placed by order would then take the bar's row instead of
+   the one that grows. */
 .panel {
+  grid-row: 3;
   display: grid;
   min-height: 0;
 }
@@ -610,6 +616,66 @@ kbd {
 
 .akashi-text-input[hidden] {
   display: none;
+}
+
+/* --- install offer ------------------------------------------------------ */
+
+/* A row of its own under the header, so the offer is never over the canvas.
+   It is shown once and dismissed for good, which is what earns it the space. */
+#install-bar {
+  grid-row: 2;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 10px;
+  background: var(--panel-hi);
+  border-bottom: 1px solid var(--line);
+}
+
+#install-bar[hidden] {
+  display: none;
+}
+
+#install-bar p {
+  flex: 1;
+  min-width: 0;
+  margin: 0;
+}
+
+#install-accept {
+  flex: none;
+  min-height: 32px;
+  padding: 0 14px;
+  border: 1px solid var(--accent);
+  border-radius: var(--radius);
+  background: var(--accent);
+  color: var(--accent-ink);
+  font-weight: 600;
+  cursor: pointer;
+}
+
+#install-dismiss {
+  color: var(--muted);
+}
+
+/* The Share-sheet route, for a browser that will not offer one of its own. It
+   belongs to no button, so it sits in the middle rather than under one. */
+#install-help {
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  max-width: min(320px, calc(100vw - 32px));
+}
+
+.menu-note {
+  margin: 0 8px 8px;
+  color: var(--muted);
+  line-height: 1.6;
+}
+
+/* The one item in the panel, and an acknowledgement rather than a choice. */
+#install-help-close {
+  text-align: center;
 }
 
 /* --- chrome ------------------------------------------------------------- */
