@@ -14,6 +14,11 @@
     />
     <title data-i18n="app.title">aka — lightweight annotation tool</title>
     <meta name="description" data-i18n-content="app.description" content="A lightweight tool for annotating, mosaicking and redacting screenshots. No install, works offline." />
+    <!--
+      The Content-Security-Policy meta is prepended to this head by
+      `vite.config.ts` from `src/csp.ts`: the dev server needs sources the
+      shipped page must not have.
+    -->
     <!-- Matches INK in src/brand.ts, which also feeds the manifest. -->
     <meta name="theme-color" content="#1b1d21" />
     <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
