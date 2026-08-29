@@ -35,40 +35,75 @@
   <body>
     <div id="app">
       <header id="topbar">
-        <div class="brand"><span class="dot"></span>Akashi</div>
+        <!-- The mark opens the menu that outranks every app: the product, and
+             how it speaks. Its name is a name, so it is not translated. -->
+        <div class="menu">
+          <button id="brand" class="brand" type="button" popovertarget="menu-app" data-i18n-label="menu.app" data-i18n-title="menu.app" aria-label="Menu" title="Menu">
+            <img src="/favicon.svg" alt="" width="22" height="22" />
+          </button>
+          <div id="menu-app" class="menu-popup" popover>
+            <p class="menu-heading">Akashi</p>
+            <label class="menu-row">
+              <span data-i18n="language.label">Language</span>
+              <!-- Options are the languages' own names, so they are not translated. -->
+              <select id="lang" class="menu-field"></select>
+            </label>
+          </div>
+        </div>
+
         <!-- Filled in from the registry in `src/apps.ts`. -->
         <nav id="apps" data-i18n-label="region.apps" aria-label="Apps"></nav>
 
         <div class="actions" data-app="editor">
-          <button type="button" data-act="open" data-i18n="action.open">Open image</button>
-          <button type="button" data-act="blank" data-i18n="action.blank">New</button>
+          <div class="menu">
+            <button class="menu-button" type="button" popovertarget="menu-editor-file" data-i18n="menu.file">File</button>
+            <div id="menu-editor-file" class="menu-popup" popover>
+              <button type="button" class="menu-item" data-act="open" data-i18n="action.open">Open image</button>
+              <button type="button" class="menu-item" data-act="blank" data-i18n="action.blank">New</button>
+              <label class="menu-row">
+                <span data-i18n="name.label">Name for saved files</span>
+                <input id="name" class="menu-field" type="text" spellcheck="false" autocomplete="off" data-i18n-placeholder="name.placeholder" placeholder="akashi-<date>" />
+              </label>
+              <button type="button" class="menu-item" data-act="clear" data-i18n="action.clear">Clear all</button>
+            </div>
+          </div>
           <span class="sep"></span>
           <button type="button" data-act="undo" data-i18n="action.undo" data-i18n-title="action.undo" data-shortcut="Ctrl/Cmd+Z">Undo</button>
           <button type="button" data-act="redo" data-i18n="action.redo" data-i18n-title="action.redo" data-shortcut="Ctrl/Cmd+Shift+Z">Redo</button>
-          <button type="button" data-act="clear" data-i18n="action.clear">Clear all</button>
           <span class="sep"></span>
           <button type="button" data-act="zoomout" data-i18n-title="action.zoomOut">−</button>
           <span id="zoom-label">100%</span>
           <button type="button" data-act="zoomin" data-i18n-title="action.zoomIn">＋</button>
           <button type="button" data-act="fit" data-i18n="action.fit" data-i18n-title="action.fitTitle" data-shortcut="Ctrl/Cmd+0">Fit</button>
           <span class="sep"></span>
-          <input id="name" type="text" spellcheck="false" autocomplete="off" data-i18n-label="name.label" data-i18n-title="name.label" data-i18n-placeholder="name.placeholder" aria-label="Name for saved files" title="Name for saved files" placeholder="akashi-<date>" />
-          <button type="button" data-act="copy" data-i18n="action.copy" data-i18n-title="action.copyTitle">Copy</button>
-          <button type="button" data-act="draft" data-i18n="action.draft" data-i18n-title="action.draftTitle" data-shortcut="Ctrl/Cmd+Shift+S">Draft</button>
-          <button type="button" data-act="save" class="primary" data-i18n="action.save" data-i18n-title="action.saveTitle" data-shortcut="Ctrl/Cmd+S">Save</button>
+          <div class="menu">
+            <button class="menu-button primary" type="button" popovertarget="menu-editor-export" data-i18n="menu.export">Export</button>
+            <div id="menu-editor-export" class="menu-popup" popover>
+              <button type="button" class="menu-item" data-act="copy" data-i18n="action.copy" data-i18n-title="action.copyTitle">Copy</button>
+              <button type="button" class="menu-item" data-act="draft" data-i18n="action.draft" data-i18n-title="action.draftTitle" data-shortcut="Ctrl/Cmd+Shift+S">Draft</button>
+              <button type="button" class="menu-item primary" data-act="save" data-i18n="action.save" data-i18n-title="action.saveTitle" data-shortcut="Ctrl/Cmd+S">Save</button>
+            </div>
+          </div>
         </div>
 
         <div class="actions" data-app="gif" hidden>
-          <button type="button" data-gif="open" data-i18n="gif.open">Open video</button>
+          <div class="menu">
+            <button class="menu-button" type="button" popovertarget="menu-gif-file" data-i18n="menu.file">File</button>
+            <div id="menu-gif-file" class="menu-popup" popover>
+              <button type="button" class="menu-item" data-gif="open" data-i18n="gif.open">Open video</button>
+              <label class="menu-row">
+                <span data-i18n="name.label">Name for saved files</span>
+                <input id="gif-name" class="menu-field" type="text" spellcheck="false" autocomplete="off" data-i18n-placeholder="name.placeholder" placeholder="akashi-<date>" />
+              </label>
+            </div>
+          </div>
           <span class="sep"></span>
-          <input id="gif-name" type="text" spellcheck="false" autocomplete="off" data-i18n-label="name.label" data-i18n-title="name.label" data-i18n-placeholder="name.placeholder" aria-label="Name for saved files" title="Name for saved files" placeholder="akashi-<date>" />
-          <button type="button" data-gif="save" class="primary" data-i18n="gif.save" data-i18n-title="gif.saveTitle" disabled>Save GIF</button>
-        </div>
-
-        <div class="actions">
-          <span class="sep"></span>
-          <!-- Options are the languages' own names, so they are not translated. -->
-          <select id="lang" data-i18n-label="language.label" data-i18n-title="language.label" aria-label="Language" title="Language"></select>
+          <div class="menu">
+            <button class="menu-button primary" type="button" popovertarget="menu-gif-export" data-i18n="menu.export">Export</button>
+            <div id="menu-gif-export" class="menu-popup" popover>
+              <button type="button" class="menu-item primary" data-gif="save" data-i18n="gif.save" data-i18n-title="gif.saveTitle" disabled>Save GIF</button>
+            </div>
+          </div>
         </div>
       </header>
 

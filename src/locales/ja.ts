@@ -39,6 +39,11 @@ export const ja: Catalog = {
   'name.placeholder': 'akashi-<日時>',
   'language.label': '言語',
 
+  // --- header menus -----------------------------------------------------
+  'menu.app': 'メニュー',
+  'menu.file': 'ファイル',
+  'menu.export': '書き出し',
+
   // --- app regions ------------------------------------------------------
   'region.apps': 'アプリ',
   'region.tools': 'ツール',

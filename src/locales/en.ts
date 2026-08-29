@@ -46,6 +46,12 @@ export const en = {
   'name.placeholder': 'akashi-<date>',
   'language.label': 'Language',
 
+  // --- header menus -----------------------------------------------------
+  // What the app mark opens: the product itself, not any one app.
+  'menu.app': 'Menu',
+  'menu.file': 'File',
+  'menu.export': 'Export',
+
   // --- app regions ------------------------------------------------------
   'region.apps': 'Apps',
   'region.tools': 'Tools',
