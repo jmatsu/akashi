@@ -1,0 +1,163 @@
+# The one thing here that produces a file somebody downloads: the `akashi-gif`
+# binary, built for five targets and attached to a GitHub Release. ci.yml is
+# the checks, deploy.yml is the web app.
+#
+# A `cli-v*` tag is the trigger, scoped to the CLI so a plain `v*` stays free
+# for the app should it ever want a version line of its own.
+#
+# The version is the tag without its prefix, plus the commit under it, so
+# `cli-v0.1.0` at a1b2c3d builds a binary that reports `0.1.0-a1b2c3d`. A tag
+# can be moved; the hash cannot, so a bug report that quotes `--version` names
+# exactly one commit. It is baked in through AKASHI_GIF_VERSION, which the
+# binary reads at compile time -- see `VERSION` in `crate/src/bin/akashi-gif.rs`.
+#
+# Nothing here is cached. A release is rare enough that a cache entry would
+# usually be cold anyway, and a cold build cannot bake in a stale version.
+#
+# Actions are pinned to a commit, since a tag can be moved. The trailing comment
+# is the release that commit was, so a bump says what it is moving away from.
+name: CLI release
+
+on:
+  push:
+    tags: ['cli-v*']
+
+# Nothing about a release is worth cancelling, but a tag that gets re-pushed
+# should queue behind itself rather than have two runs fight over one release.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  # Worked out once and handed down, so five builders and the release cannot
+  # disagree about what they are naming. Neither the tag nor the commit needs a
+  # checkout to read: both are in the event.
+  version:
+    name: Version
+    runs-on: ubuntu-slim
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+    steps:
+      - id: version
+        run: |
+          version="${GITHUB_REF_NAME#cli-v}-${GITHUB_SHA::7}"
+          # The glob admits `cli-vanything`; a release is worth failing before
+          # it is built rather than shipping a binary called `-a1b2c3d`.
+          case "$version" in
+            [0-9]*) ;;
+            *) echo "::error::tag $GITHUB_REF_NAME does not start cli-v<version>" && exit 1 ;;
+          esac
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+
+  build:
+    name: ${{ matrix.target }}
+    needs: version
+    runs-on: ${{ matrix.os }}
+    # A tag is awkward to re-cut, so one run should report everything wrong
+    # with it rather than the first thing.
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - target: x86_64-unknown-linux-musl
+            os: ubuntu-latest
+          - target: aarch64-unknown-linux-musl
+            os: ubuntu-latest
+          - target: x86_64-apple-darwin
+            os: macos-latest
+          - target: aarch64-apple-darwin
+            os: macos-latest
+          - target: x86_64-pc-windows-msvc
+            os: windows-latest
+            exe: .exe
+    defaults:
+      run:
+        # bash on the Windows runner too, so each step below is one script
+        # rather than one per platform.
+        shell: bash
+    env:
+      AKASHI_GIF_VERSION: ${{ needs.version.outputs.version }}
+      ARCHIVE: akashi-gif-${{ needs.version.outputs.version }}-${{ matrix.target }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - run: rustup target add ${{ matrix.target }}
+      # musl needs a linker no runner ships, and aarch64 needs one that is not
+      # the host's either. This supplies both, and the qemu that lets the
+      # cross-built binary still answer `--version` below.
+      - if: runner.os == 'Linux'
+        uses: taiki-e/setup-cross-toolchain-action@12b7ad4acfa95a1476779d6c06699b96ec1691f8 # v1.42.0
+        with:
+          target: ${{ matrix.target }}
+      # `--bin` rather than the package: the library is the wasm module's, and
+      # the cdylib it would otherwise also build is of no use to a binary.
+      - name: Build
+        run: >-
+          cargo build --manifest-path crate/Cargo.toml --release
+          --features cli --bin akashi-gif --target ${{ matrix.target }}
+
+      # Proof that what was built runs and is labelled with what was asked for
+      # -- the release is named after this string, and a silently stale one
+      # would be wrong everywhere at once. Skipped for the single build the
+      # runner it came off cannot execute.
+      - name: Check the version it reports
+        if: matrix.target != 'x86_64-apple-darwin'
+        run: |
+          reported=$(crate/target/${{ matrix.target }}/release/akashi-gif${{ matrix.exe }} --version)
+          echo "$reported"
+          [ "$reported" = "akashi-gif $AKASHI_GIF_VERSION" ]
+
+      # A directory inside the archive, so unpacking it in a downloads folder
+      # leaves one thing behind rather than three. The licence travels with the
+      # binary because Apache-2.0 section 4 asks it to.
+      - name: Archive
+        run: |
+          mkdir "$ARCHIVE"
+          cp "crate/target/${{ matrix.target }}/release/akashi-gif${{ matrix.exe }}" LICENSE NOTICE "$ARCHIVE/"
+          if [ "$RUNNER_OS" = Windows ]; then
+            7z a "$ARCHIVE.zip" "$ARCHIVE" > /dev/null
+            echo "ASSET=$ARCHIVE.zip" >> "$GITHUB_ENV"
+          else
+            tar czf "$ARCHIVE.tar.gz" "$ARCHIVE"
+            echo "ASSET=$ARCHIVE.tar.gz" >> "$GITHUB_ENV"
+          fi
+
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: ${{ matrix.target }}
+          path: ${{ env.ASSET }}
+          if-no-files-found: error
+
+  # One release, published with the notes GitHub writes from the commits since
+  # the last tag. `gh` rather than an action: the token and the repository are
+  # all it needs, so there is nothing here to pin or to check out.
+  release:
+    name: Release
+    needs: [version, build]
+    # The full image rather than the slim one `version` gets by on: this is
+    # the only job that needs `gh` to be there.
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    env:
+      GH_TOKEN: ${{ github.token }}
+      GH_REPO: ${{ github.repository }}
+    steps:
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          path: assets
+          merge-multiple: true
+      # Named rather than globbed, so the sums file cannot end up listing
+      # itself, and so an artifact that arrived under some other name is left
+      # out of the release loudly rather than checksummed quietly.
+      - name: Checksums
+        working-directory: assets
+        run: sha256sum akashi-gif-* | tee SHA256SUMS
+      - name: Publish
+        run: >-
+          gh release create "$GITHUB_REF_NAME"
+          assets/akashi-gif-* assets/SHA256SUMS
+          --title "akashi-gif ${{ needs.version.outputs.version }}"
+          --generate-notes

@@ -33,10 +33,18 @@ const MAX_FRAMES: usize = 300;
 /// `src/apps/gif/plan.ts`.
 const PALETTE_FRAMES: usize = 12;
 
+/// What `--version` reports. The release workflow bakes in the tag and the
+/// commit it was cut from; anything built from a checkout falls back to the
+/// crate's own version, which is the only one it can honestly claim.
+const VERSION: &str = match option_env!("AKASHI_GIF_VERSION") {
+    Some(version) => version,
+    None => env!("CARGO_PKG_VERSION"),
+};
+
 #[derive(Parser)]
 #[command(
     name = "akashi-gif",
-    version,
+    version = VERSION,
     about = "Encode raw RGBA frames into an animated GIF",
     long_about = "Encode raw RGBA frames into an animated GIF.\n\n\
                   Frames are read from stdin (or --input) as tightly packed \
