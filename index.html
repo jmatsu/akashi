@@ -112,12 +112,23 @@
               <!-- Options are the languages' own names, so they are not translated. -->
               <select id="lang" class="menu-field"></select>
             </label>
+            <!-- Shown by `src/install.ts` only while installing is possible,
+                 and gone once the app is installed. -->
+            <button type="button" id="install" class="menu-item" data-i18n="install.menu" hidden>Install app</button>
             <a class="menu-item" href="https://github.com/jmatsu/akashi" target="_blank" rel="noreferrer" data-i18n="menu.repo">Source code</a>
             <!-- src/main.ts appends the build stamp here: which build this is
                  is only known to the bundle it was stamped into. -->
           </div>
         </div>
       </header>
+
+      <!-- The offer to install, made once and dismissable for good. Hidden
+           until `src/install.ts` hears that the browser can install this. -->
+      <div id="install-bar" hidden>
+        <p data-i18n="install.suggest">Install Akashi to keep it one tap away, offline</p>
+        <button type="button" id="install-accept" class="primary" data-i18n="install.action">Install</button>
+        <button type="button" id="install-dismiss" class="icon-button" data-i18n-label="install.dismiss" aria-label="Dismiss">✕</button>
+      </div>
 
       <section id="panel-editor" class="panel" data-app="editor">
         <nav id="tools" data-i18n-label="region.tools" aria-label="Tools"></nav>
@@ -200,6 +211,14 @@
           </div>
         </fieldset>
       </section>
+    </div>
+
+    <!-- What a browser with no install API is told instead: the route it does
+         have. Opened by `src/install.ts`, never by a button of its own. -->
+    <div id="install-help" class="menu-popup" popover>
+      <p class="menu-heading" data-i18n="install.manualTitle">Add Akashi to the Home Screen</p>
+      <p class="menu-note" data-i18n-html="install.manualSteps">Open the browser <kbd>Share</kbd> menu, then <kbd>Add to Home Screen</kbd></p>
+      <button type="button" id="install-help-close" class="menu-item primary" data-i18n="install.manualClose">Got it</button>
     </div>
 
     <div id="toast" role="status" aria-live="polite"></div>

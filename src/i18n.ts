@@ -8,10 +8,12 @@
  * viewer sees before this module has run.
  */
 
-import { DEFAULT_LOCALE, LOCALE_NAMES, format, isLocale, isMessageKey } from './locales'
+// The extension is named for the same reason `src/locales/` names one: this
+// module is on the way to `src/install.ts`, which the tests load in Node.
+import { DEFAULT_LOCALE, LOCALE_NAMES, format, isLocale, isMessageKey } from './locales/index.ts'
 import type { Locale, MessageKey } from './locales'
 
-export { DEFAULT_LOCALE, LOCALES, isLocale } from './locales'
+export { DEFAULT_LOCALE, LOCALES, isLocale } from './locales/index.ts'
 export type { Locale, MessageKey } from './locales'
 
 const STORAGE_KEY = 'akashi.locale'

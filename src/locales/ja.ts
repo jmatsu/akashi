@@ -46,6 +46,15 @@ export const ja: Catalog = {
   'menu.repo': 'ソースコード',
   'menu.build': 'ビルド {sha} · {date}',
 
+  // --- install ----------------------------------------------------------
+  'install.suggest': 'Akashi をインストールすると、オフラインでもすぐ開けます',
+  'install.action': 'インストール',
+  'install.menu': 'アプリとしてインストール',
+  'install.dismiss': '閉じる',
+  'install.manualTitle': 'ホーム画面に追加',
+  'install.manualSteps': 'ブラウザの <kbd>共有</kbd> メニューから <kbd>ホーム画面に追加</kbd> を選びます',
+  'install.manualClose': 'わかりました',
+
   // --- app regions ------------------------------------------------------
   'region.apps': 'アプリ',
   'region.tools': 'ツール',
@@ -126,4 +135,5 @@ export const ja: Catalog = {
   'toast.videoFailed': 'このブラウザではその動画を開けません',
   'toast.gifSaved': 'GIF を保存しました',
   'toast.gifFailed': 'この動画は変換できませんでした',
+  'toast.installed': 'インストールしました。単独のアプリとして開けます',
 }

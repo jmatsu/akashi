@@ -55,6 +55,15 @@ export const en = {
   // The date is ISO, so it reads the same in every locale.
   'menu.build': 'Build {sha} · {date}',
 
+  // --- install ----------------------------------------------------------
+  'install.suggest': 'Install Akashi to keep it one tap away, offline',
+  'install.action': 'Install',
+  'install.menu': 'Install app',
+  'install.dismiss': 'Dismiss',
+  'install.manualTitle': 'Add Akashi to the Home Screen',
+  'install.manualSteps': 'Open the browser <kbd>Share</kbd> menu, then <kbd>Add to Home Screen</kbd>',
+  'install.manualClose': 'Got it',
+
   // --- app regions ------------------------------------------------------
   'region.apps': 'Apps',
   'region.tools': 'Tools',
@@ -134,6 +143,7 @@ export const en = {
   'toast.videoFailed': 'This browser cannot open that video',
   'toast.gifSaved': 'Saved as GIF',
   'toast.gifFailed': 'Could not convert that clip',
+  'toast.installed': 'Installed. Akashi opens on its own now',
 }
 
 export type MessageKey = keyof typeof en

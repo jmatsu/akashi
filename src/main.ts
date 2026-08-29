@@ -1,6 +1,7 @@
 import { BUILD_DATE, BUILD_SHA, COMMIT_URL } from './build'
 import { must } from './dom'
 import { LOCALES, initI18n, isLocale, locale, localeName, onLocaleChange, setLocale, t } from './i18n'
+import { wireInstall } from './install'
 import { wireMenus } from './menu'
 import { startRouter } from './router'
 import { wasmReady } from './wasm'
@@ -21,6 +22,9 @@ async function boot(): Promise<void> {
   wireMenus()
   wireLanguage()
   wireBuild()
+  // Early, and before the first await: the browser offers the install prompt
+  // once, and only a listener already there catches it.
+  wireInstall()
 
   await startRouter()
 
