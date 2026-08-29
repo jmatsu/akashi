@@ -48,6 +48,31 @@ lands it in Files rather than Photos on iOS, which would re-encode it and strip
 the chunk. The cost is that Chrome will not share a `.aka` file through the
 share sheet, so there you get a download to pass on yourself.
 
+## Nothing leaves the device
+
+The screenshots people annotate here are the ones they cannot send anywhere:
+staging data, a customer's account, an unreleased screen. So aka has no server,
+no analytics and no telemetry — and rather than leave that as a promise, three
+barriers hold the code to it:
+
+- **The browser enforces it.** `src/csp.ts` states a Content-Security-Policy
+  that `vite.config.ts` writes into the page as a `<meta http-equiv>`, since a
+  static host serves no headers of its own. `default-src 'none'`, and the only
+  directive that reaches a network at all is `connect-src 'self'` — the wasm
+  module and the assets the service worker precaches. A request to anywhere
+  else is refused by the browser, not by the code that made it.
+- **The linter refuses to write it.** `fetch`, `XMLHttpRequest`, `WebSocket`,
+  `EventSource` and `RTCPeerConnection` are denied globals in `biome.json`, so
+  a call that would need the network fails `npm run lint` and CI.
+- **The build is checked.** `test/offline.test.ts` reads the built `dist/` —
+  bundle, service worker, manifests and all — and fails if any file names a
+  remote origin, or if the shipped page's policy has drifted from `src/csp.ts`.
+  It covers generated and vendored code, which the first two barriers do not.
+
+The one thing that does hand a file to another app is **Draft**, and only when
+you ask: on a phone it goes through the OS share sheet, where you pick the
+destination yourself.
+
 ## Keyboard shortcuts
 
 | Keys | Action |
@@ -85,7 +110,7 @@ npm install
 npm run dev           # build wasm, then start the Vite dev server
 npm run build         # production build into dist/
 npm run preview       # serve the build (use this to check PWA behaviour)
-npm test              # Rust unit tests + the web tests
+npm test              # Rust unit tests + the web tests (after a build: one reads dist/)
 npm run lint          # Biome (TS/CSS) + clippy (crate)
 npm run format        # Biome + rustfmt, writing changes
 npm run format:check  # the same check CI runs
@@ -117,6 +142,7 @@ src/draft.ts       Reading and writing drafts
 src/filename.ts    Turning a document name into a file name safely
 src/png.ts         PNG container: signature, chunks, CRC
 src/brand.ts       Colours and icon specs, shared with the build
+src/csp.ts         The no-network policy, shared with the build and the tests
 src/i18n.ts        Locale detection, persistence and application
 src/locales/       The catalogs (DOM-free; the build and tests read them too)
 scripts/make-icons.mjs  Generates the PWA icons from geometry

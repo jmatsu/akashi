@@ -80,7 +80,8 @@ jobs:
       - run: npm ci
       # wasm-pack, then `tsc --noEmit`, then the bundle.
       - run: npm run build
-      # The web tests import the bindings the build just generated.
+      # The web tests import the bindings the build just generated, and one of
+      # them reads `dist/` to hold the bundle to the no-network policy.
       - run: npm run test:web
       # Uploaded on pull requests too, so a broken bundle shows up before merge.
       - uses: actions/upload-pages-artifact@fc324d3547104276b827a68afc52ff2a11cc49c9 # v5.0.0

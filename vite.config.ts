@@ -3,11 +3,48 @@ import { defineConfig } from 'vite'
 import type { Plugin } from 'vite'
 import { VitePWA } from 'vite-plugin-pwa'
 import { ICONS, INK } from './src/brand'
+import { cspPolicy } from './src/csp'
+import type { Directives } from './src/csp'
 import { DEFAULT_LOCALE, LOCALES, format } from './src/locales'
 import type { Locale } from './src/locales'
 
 // Overridable so a static deploy can live under a sub-path (GitHub Pages).
 const base = process.env.AKA_BASE ?? '/'
+
+/**
+ * What the dev server needs on top of the shipped policy: HMR's socket, the
+ * client Vite inlines, and the stylesheets it injects as script. None of it
+ * reaches the built page.
+ */
+const DEV_CSP: Directives = {
+  'script-src': ["'unsafe-inline'"],
+  'style-src': ["'unsafe-inline'"],
+  'connect-src': ['ws:'],
+}
+
+/** The no-network barrier, stated in `src/csp.ts` and enforced by the browser. */
+function csp(): Plugin {
+  let serving = false
+  return {
+    name: 'aka:csp',
+    configResolved(config) {
+      serving = config.command === 'serve'
+    },
+    transformIndexHtml: {
+      order: 'pre',
+      handler: () => [
+        {
+          tag: 'meta',
+          attrs: {
+            'http-equiv': 'Content-Security-Policy',
+            content: cspPolicy(serving ? DEV_CSP : {}),
+          },
+          injectTo: 'head-prepend',
+        },
+      ],
+    },
+  }
+}
 
 /**
  * One manifest per locale, all declaring the same `id` so switching language
@@ -68,6 +105,7 @@ export default defineConfig({
     assetsInlineLimit: 0,
   },
   plugins: [
+    csp(),
     localizedManifests(),
     VitePWA({
       registerType: 'autoUpdate',
