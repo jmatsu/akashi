@@ -8,7 +8,8 @@ import type { Directives } from './src/csp'
 import { DEFAULT_LOCALE, LOCALES, format } from './src/locales'
 import type { Locale } from './src/locales'
 
-// Overridable so a static deploy can live under a sub-path (GitHub Pages).
+// Cloudflare Pages serves from the root, so nothing sets this today; it stays
+// overridable because a sub-path deploy is one env var away, not a rewrite.
 const base = process.env.AKA_BASE ?? '/'
 
 /**

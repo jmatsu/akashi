@@ -1,0 +1,142 @@
+# Everything that publishes. ci.yml is the checks; this is what ships, so a
+# question about what is live is answered in one file.
+#
+# Cloudflare Pages is the canonical host, <https://aka.jmatsu.dev/>, and gets
+# the app. GitHub Pages keeps the address the app used to have and gets the
+# redirect that forwards it.
+#
+# The bundle is built here rather than handed over from ci.yml: a cross-workflow
+# artifact means `workflow_run`, which only fires after CI finishes and reports
+# against the default branch, so the preview check would never appear on the
+# pull request. The cost is one repeated build per event.
+#
+# Actions are pinned to a commit, since a tag can be moved. The trailing comment
+# is the release that commit was, so a bump says what it is moving away from.
+#
+# Setup on the Cloudflare side, once:
+#   - A Pages project named `aka`, production branch `main`
+#   - aka.jmatsu.dev as a custom domain on that project
+#   - Repository secrets CLOUDFLARE_ACCOUNT_ID and CLOUDFLARE_API_TOKEN, the
+#     token scoped to Cloudflare Pages:Edit
+name: Deploy
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+# A superseded preview is worth cancelling; a production deploy in flight is not.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+permissions:
+  contents: read
+
+env:
+  # The tests import `.ts` files directly, which needs Node's type stripping.
+  NODE_VERSION: '24'
+
+jobs:
+  cloudflare:
+    name: Cloudflare Pages
+    # Secrets are not exposed to a fork's pull request, so there is nothing to
+    # deploy with; ci.yml still builds and tests the commit.
+    if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      # For the preview comment.
+      pull-requests: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - run: rustup target add wasm32-unknown-unknown
+      # `shared-key` rather than the default per-job key: this builds the same
+      # wasm as ci.yml's `build`, so the two share one cache entry.
+      - uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2.9.2
+        with:
+          workspaces: crate
+          shared-key: wasm
+      - uses: taiki-e/install-action@37f7c5781271959fb65b6b35224e28652ff2b63d # v2.87.0
+        with:
+          tool: wasm-pack
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+      - run: npm ci
+      # wasm-pack, then `tsc --noEmit`, then the bundle.
+      - run: npm run build
+      # Nothing waits on ci.yml here, so the test that holds `dist/` to the
+      # no-network policy has to gate the live site itself.
+      - run: npm run test:web
+
+      # Any branch other than the project's production branch is a preview, so
+      # the branch name is what separates the two.
+      - id: deploy
+        uses: cloudflare/wrangler-action@ebbaa1584979971c8614a24965b4405ff95890e0 # v4.0.0
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          command: >-
+            pages deploy dist
+            --project-name=aka
+            --branch=${{ github.head_ref || github.ref_name }}
+
+      - name: Comment the preview URL
+        if: github.event_name == 'pull_request'
+        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
+        env:
+          # The alias follows the branch, so it stays right as the PR is pushed
+          # to; the per-deployment URL is the fallback for a non-preview.
+          DEPLOYMENT_URL: ${{ steps.deploy.outputs.deployment-url }}
+          ALIAS_URL: ${{ steps.deploy.outputs.pages-deployment-alias-url }}
+        with:
+          script: |
+            // Keyed by this marker so a later push edits the comment it left
+            // last time rather than adding another one.
+            const marker = '<!-- cloudflare-pages-preview -->'
+            const { DEPLOYMENT_URL, ALIAS_URL } = process.env
+            const sha = context.payload.pull_request.head.sha.slice(0, 7)
+            const body = `${marker}\n**[Cloudflare Pages preview](${ALIAS_URL || DEPLOYMENT_URL})** \`${sha}\``
+
+            const { owner, repo } = context.repo
+            const issue_number = context.payload.pull_request.number
+            const comments = await github.paginate(github.rest.issues.listComments, {
+              owner,
+              repo,
+              issue_number,
+            })
+            const existing = comments.find((c) => c.body.includes(marker))
+
+            if (existing) {
+              await github.rest.issues.updateComment({ owner, repo, comment_id: existing.id, body })
+            } else {
+              await github.rest.issues.createComment({ owner, repo, issue_number, body })
+            }
+
+  # jmatsu.github.io/aka/ is where the app used to live, so it stays up as a
+  # redirect to aka.jmatsu.dev rather than 404ing an address people have. It
+  # shares nothing with the bundle, so it neither waits for one nor builds one.
+  github-redirect:
+    name: GitHub Pages redirect
+    if: github.event_name != 'pull_request'
+    runs-on: ubuntu-slim
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      # GitHub Pages serves 404.html for anything it has no file for, which is
+      # every deep link into the old app -- so the redirect has to be there too.
+      - run: cp .github/workflows/gh-pages-redirect/index.html .github/workflows/gh-pages-redirect/404.html
+      - uses: actions/upload-pages-artifact@fc324d3547104276b827a68afc52ff2a11cc49c9 # v5.0.0
+        with:
+          path: .github/workflows/gh-pages-redirect
+      - id: deployment
+        uses: actions/deploy-pages@cd2ce8fcbc39b97be8ca5fce6e763baed58fa128 # v5.0.0
