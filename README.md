@@ -1,34 +1,30 @@
-# Akashi
+# Akashi - https://akashi.jmatsu.dev
 
 Lightweight tools for the things developers, QA and PO do to screenshots and
-screen recordings before pasting them into a ticket.
-
-**<https://akashi.jmatsu.dev/>**
-
-Two apps, switched from the corner of the header:
+screen recordings before pasting them into a ticket. Currently, Akashi offers two apps, switched from the corner of the header:
 
 | App | URL | What it does |
 | --- | --- | --- |
 | **Annotate** | `/` | Text, shapes, arrows, markers, stamps and redaction on a screenshot |
 | **GIF** | `/?app=gif` | A `webm`, `mov` or `mp4` clip trimmed and converted to an animated GIF |
 
-Akashi is a PWA, so the same thing runs on Windows, macOS, Linux, Android and
-iOS. Nothing you open leaves your device — there is nowhere to upload it to —
-and a service worker precaches every asset, so it works offline once opened. The
-UI is in English and Japanese, picked from your browser's language and
-switchable from the header.
+<details><summary>The name of Akashi?</summary>
 
-## The name
-
-**証** (*akashi*) is Japanese for evidence — the proof you attach to a ticket so
+**証** (*akashi*) is a Japanese word for evidence — the proof you attach to a ticket so
 that a bug is something someone else can see. It is also what the app does, in
 order: **A**nnotate, **K**nit, **A**ssure, **SH**ip. Mark up the screenshot,
 stitch the recording into a single artefact, redact what must not travel, and
 hand it on.
 
-It was called `aka` until this rename. `jmatsu.github.io/aka/` still forwards
-here, and a draft written as `.aka` still opens — the reader goes by the bytes,
-not the name.
+</details>
+
+## Principles
+
+- Works with offline.
+- Run on Windows, macOS, Linux, Android and iOS.
+- Nothing you open leaves your device. Safe for everyone.
+  - Backend-less, no upload, no network request
+- Minimum external dependencies (Currently, zero dependency)
 
 ## Annotate
 
@@ -46,28 +42,11 @@ Everything is **non-destructive**. A mosaic is an object like any other: move
 it, resize it, delete it, undo it. The original pixels are kept until you
 export.
 
-Images come in by paste (`Ctrl/Cmd+V`), drag and drop, or the file picker, and
-go out as a saved PNG or straight onto the clipboard. The name field in the
-header is what exports are called — it starts as the name of the image you
-opened, and falls back to `akashi-<timestamp>.png` for a pasted one.
+## Draft annotations: continuing on another device
 
-## Drafts: continuing on another device
+Akashi allows you annotate on your phone, finish on your desktop. Tap **Draft** (`Ctrl/Cmd+Shift+S`), then Akashi writes a `.akashi` file that the other device's Akashi reopens with every object still selectable. **AirDrop, Quick Share, a cable or a shared folder all carry it as-is, with no server involved.**
 
-Annotate on your phone, finish on your desktop. **Draft** (`Ctrl/Cmd+Shift+S`)
-writes a `.akashi` file that the other device's Akashi reopens with every
-object still selectable. Drop it, paste it or pick it like any image — Akashi
-checks the bytes, not the extension.
-
-A draft is a real PNG: the same flattened image "Save" produces, with the
-editing session stored in a private PNG chunk beside the pixels. AirDrop, Quick
-Share, a cable or a shared folder all carry it as-is, with no server involved.
-
-It is named `.akashi` rather than `.png` because **a draft contains the original
-image**, so passing one on undoes every blackout and mosaic drawn over it. The
-extension keeps it distinct from the flattened export you meant to send, and
-lands it in Files rather than Photos on iOS, which would re-encode it and strip
-the chunk. The cost is that Chrome will not share a `.akashi` file through the
-share sheet, so there you get a download to pass on yourself.
+Please note that a draft file (`.akashi`) is a real PNG file but do not treat this as a shareable image format. The original image and annotations are stored independently in the `.akashi` file, allowing the recipient to recover the original image file.
 
 ## Nothing leaves the device
 
@@ -76,46 +55,23 @@ staging data, a customer's account, an unreleased screen. So Akashi has no serve
 no analytics and no telemetry — and rather than leave that as a promise, three
 barriers hold the code to it:
 
-- **The browser enforces it.** `src/csp.ts` states a Content-Security-Policy
-  that `vite.config.ts` writes into the page as a `<meta http-equiv>`, since a
-  static host serves no headers of its own. `default-src 'none'`, and the only
-  directive that reaches a network at all is `connect-src 'self'` — the wasm
-  module and the assets the service worker precaches. Images and video are
-  `'self'` plus `blob:`, which is the app's own bytes and can name no host. A
-  request to anywhere else is refused by the browser, not by the code that made
-  it.
-- **The linter refuses to write it.** `fetch`, `XMLHttpRequest`, `WebSocket`,
-  `EventSource` and `RTCPeerConnection` are denied globals in `biome.json`, so
-  a call that would need the network fails `npm run lint` and CI.
-- **The build is checked.** `test/offline.test.ts` reads the built `dist/` —
-  bundle, service worker, manifests and all — and fails if any file names a
-  remote origin, or if the shipped page's policy has drifted from `src/csp.ts`.
-  It covers generated and vendored code, which the first two barriers do not.
+- **The browser enforces it.**
+  - `src/csp.ts` states a Content-Security-Policy.
+- **The linter refuses to write it.**
+- **The build is checked.**
+  - `test/offline.test.ts` covers generated and vendored code, which the first two barriers do not.
 
-The one thing that does hand a file to another app is **Draft**, and only when
-you ask: on a phone it goes through the OS share sheet, where you pick the
-destination yourself.
+> **Draft** is an exception but we expect you will be transferring the data between the two devices on your own initiative.
 
 ## GIF: a screen recording into something you can paste
 
 Drop a `webm`, `mov` or `mp4` in, trim it with the two handles, and convert.
-Frame rate, output width, looping and dithering are the settings; the line under
-them says how many frames that comes to and roughly what it will weigh, before
-you spend anything on it.
+Frame rate, output width, looping and dithering are the settings.
 
-**Nothing is bundled to decode video** — the browser you already have does that,
-which is why the formats Akashi opens are exactly the formats your browser plays
-(H.264, VP8/VP9 and AV1 everywhere; HEVC in Safari). The clip is never uploaded
-to be read: it reaches the `<video>` element as a blob of its own bytes.
-
-The GIF itself is written by the Rust core: one palette for the whole animation,
-chosen by median cut over a sample of the clip, Floyd-Steinberg dithering, and
-each frame stored only where it differs from the one before. Frames stream
-through one at a time, so a long clip is never held in memory as pixels.
-
-A GIF is a big way to store a video, so the two levers that matter are the trim
-and the width. The frame count is capped at 300: past that the frame rate gives
-way and the clip still runs for as long as you trimmed it, just more coarsely.
+- **Nothing is bundled to decode video**
+  — The clip is never uploaded to be read: it reaches the `<video>` element as a blob of its own bytes.
+- **The GIF handling also requires no backend**
+  - Rust WASM does. See [gif modules in ./crate/src][./crate/src].
 
 ## Keyboard shortcuts
 
@@ -137,6 +93,10 @@ the dashed outline to move it, both of which keep working while a drawing tool
 is active. Grabbing an object by its body is the select tool's job (`V`), so
 that you can draw on top of existing shapes.
 
+# Development
+
+For agents, respect [Principles](#Principles) first.
+
 ## Setup
 
 You need Node and a Rust toolchain with the wasm target.
@@ -150,7 +110,7 @@ export PATH="$HOME/.cargo/bin:$PATH"
 npm install
 ```
 
-## Development
+## Tools
 
 ```sh
 npm run dev           # build wasm, then start the Vite dev server
@@ -166,13 +126,6 @@ npm run format:check  # the same check CI runs
 `AKASHI_BASE=/akashi/ npm run build`. CI runs the same checks on every push and
 pull request. `main` is published to Cloudflare Pages, and a pull request from
 this repository gets a preview deployment commented onto it.
-
-GitHub Pages serves the redirect in `.github/workflows/gh-pages-redirect/`,
-which is what `https://jmatsu.github.io/akashi/` answers with — and
-`/aka/` before it, which is where the app actually lived. Its `sw.js` replaces
-the service worker Akashi used to install there, so anyone still holding the old
-PWA is carried across rather than left on a cached copy — it has to keep being
-deployed for as long as that is true.
 
 To add a language, drop a catalog into `src/locales/` and list it in `index.ts`.
 `en.ts` is the reference — every other catalog is typed as `Catalog`, so a
