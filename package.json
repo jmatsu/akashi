@@ -1,12 +1,12 @@
 {
-  "name": "aka",
+  "name": "akashi",
   "version": "0.1.0",
   "private": true,
-  "description": "aka - a lightweight, offline-first annotation & design tool for developers, QA and PO",
+  "description": "Akashi - a lightweight, offline-first annotation & design tool for developers, QA and PO",
   "license": "MIT",
   "type": "module",
   "scripts": {
-    "build:wasm": "wasm-pack build crate --release --target web --out-dir ../src/wasm --out-name aka_core",
+    "build:wasm": "wasm-pack build crate --release --target web --out-dir ../src/wasm --out-name akashi_core",
     "dev": "npm run build:wasm && vite",
     "build": "npm run build:wasm && tsc --noEmit && vite build",
     "preview": "vite preview",

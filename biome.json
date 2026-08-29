@@ -36,11 +36,11 @@
           "level": "error",
           "options": {
             "deniedGlobals": {
-              "fetch": "aka sends nothing to the internet. See src/csp.ts.",
-              "XMLHttpRequest": "aka sends nothing to the internet. See src/csp.ts.",
-              "WebSocket": "aka sends nothing to the internet. See src/csp.ts.",
-              "EventSource": "aka sends nothing to the internet. See src/csp.ts.",
-              "RTCPeerConnection": "aka sends nothing to the internet. See src/csp.ts."
+              "fetch": "Akashi sends nothing to the internet. See src/csp.ts.",
+              "XMLHttpRequest": "Akashi sends nothing to the internet. See src/csp.ts.",
+              "WebSocket": "Akashi sends nothing to the internet. See src/csp.ts.",
+              "EventSource": "Akashi sends nothing to the internet. See src/csp.ts.",
+              "RTCPeerConnection": "Akashi sends nothing to the internet. See src/csp.ts."
             }
           }
         }

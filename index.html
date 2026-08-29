@@ -16,7 +16,7 @@
       name="viewport"
       content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no"
     />
-    <title data-i18n="app.title">aka — lightweight screenshot and screen recording tools</title>
+    <title data-i18n="app.title">Akashi — lightweight screenshot and screen recording tools</title>
     <meta name="description" data-i18n-content="app.description" content="Lightweight tools for annotating screenshots and turning screen recordings into GIFs. No install, works offline." />
     <!--
       The Content-Security-Policy meta is prepended to this head by
@@ -30,12 +30,12 @@
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
     <meta name="mobile-web-app-capable" content="yes" />
-    <meta name="apple-mobile-web-app-title" content="aka" />
+    <meta name="apple-mobile-web-app-title" content="Akashi" />
   </head>
   <body>
     <div id="app">
       <header id="topbar">
-        <div class="brand"><span class="dot"></span>aka</div>
+        <div class="brand"><span class="dot"></span>Akashi</div>
         <!-- Filled in from the registry in `src/apps.ts`. -->
         <nav id="apps" data-i18n-label="region.apps" aria-label="Apps"></nav>
 
@@ -52,7 +52,7 @@
           <button type="button" data-act="zoomin" data-i18n-title="action.zoomIn">＋</button>
           <button type="button" data-act="fit" data-i18n="action.fit" data-i18n-title="action.fitTitle" data-shortcut="Ctrl/Cmd+0">Fit</button>
           <span class="sep"></span>
-          <input id="name" type="text" spellcheck="false" autocomplete="off" data-i18n-label="name.label" data-i18n-title="name.label" data-i18n-placeholder="name.placeholder" aria-label="Name for saved files" title="Name for saved files" placeholder="aka-<date>" />
+          <input id="name" type="text" spellcheck="false" autocomplete="off" data-i18n-label="name.label" data-i18n-title="name.label" data-i18n-placeholder="name.placeholder" aria-label="Name for saved files" title="Name for saved files" placeholder="akashi-<date>" />
           <button type="button" data-act="copy" data-i18n="action.copy" data-i18n-title="action.copyTitle">Copy</button>
           <button type="button" data-act="draft" data-i18n="action.draft" data-i18n-title="action.draftTitle" data-shortcut="Ctrl/Cmd+Shift+S">Draft</button>
           <button type="button" data-act="save" class="primary" data-i18n="action.save" data-i18n-title="action.saveTitle" data-shortcut="Ctrl/Cmd+S">Save</button>
@@ -61,7 +61,7 @@
         <div class="actions" data-app="gif" hidden>
           <button type="button" data-gif="open" data-i18n="gif.open">Open video</button>
           <span class="sep"></span>
-          <input id="gif-name" type="text" spellcheck="false" autocomplete="off" data-i18n-label="name.label" data-i18n-title="name.label" data-i18n-placeholder="name.placeholder" aria-label="Name for saved files" title="Name for saved files" placeholder="aka-<date>" />
+          <input id="gif-name" type="text" spellcheck="false" autocomplete="off" data-i18n-label="name.label" data-i18n-title="name.label" data-i18n-placeholder="name.placeholder" aria-label="Name for saved files" title="Name for saved files" placeholder="akashi-<date>" />
           <button type="button" data-gif="save" class="primary" data-i18n="gif.save" data-i18n-title="gif.saveTitle" disabled>Save GIF</button>
         </div>
 
@@ -158,7 +158,7 @@
     <div id="toast" role="status" aria-live="polite"></div>
     <div id="loading" data-i18n="app.loading">Loading…</div>
 
-    <input id="file" type="file" accept="image/*,.aka" hidden />
+    <input id="file" type="file" accept="image/*,.akashi,.aka" hidden />
     <input id="video-file" type="file" accept="video/*,.webm,.mov,.mp4" hidden />
     <script type="module" src="/src/main.ts"></script>
   </body>

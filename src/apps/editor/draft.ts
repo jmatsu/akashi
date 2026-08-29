@@ -4,11 +4,12 @@
  * devices over whatever the OS already offers -- AirDrop, a cable, a shared
  * folder -- all of which move files, and a PNG is carried as-is.
  *
- * It goes out as `.aka` because a draft holds the *original* image: passing one
- * on undoes every redaction drawn over it, and under a `.png` name it would be
- * indistinguishable from the flattened export that should have been sent. The
- * extension also keeps it out of iOS Photos, which re-encodes and drops the
- * chunk. Reading goes by bytes, not name, so a renamed draft still opens.
+ * It goes out as `.akashi` because a draft holds the *original* image: passing
+ * one on undoes every redaction drawn over it, and under a `.png` name it would
+ * be indistinguishable from the flattened export that should have been sent.
+ * The extension also keeps it out of iOS Photos, which re-encodes and drops the
+ * chunk. Reading goes by bytes, not name, so a draft written as `.aka` before
+ * the rename, or renamed by hand since, still opens.
  *
  * No DOM here, so the format is exercised by the tests directly.
  */
@@ -24,11 +25,14 @@ import type { ArrowStyle, Doc, Obj, ObjOf, ObjType, Pt, RegionMode } from './typ
  * The chunk carrying the session, named by PNG's case conventions: ancillary,
  * private, reserved-bit uppercase, and unsafe to copy -- the session describes
  * *these* pixels, so a re-encoding editor should drop it rather than carry it.
+ *
+ * The four letters are frozen at what they were before the rename: it is how a
+ * reader finds the session, so changing them would orphan every draft written.
  */
 export const DRAFT_CHUNK = 'akDF'
 
 /** The extension a draft is written under, without the dot. See the note above. */
-export const DRAFT_EXT = 'aka'
+export const DRAFT_EXT = 'akashi'
 
 /** Bumped only for a change the current reader cannot make sense of. */
 const DRAFT_VERSION = 1
@@ -55,7 +59,7 @@ export function encodeDraft(flatPng: Bytes, draft: Draft): Bytes[] {
   const chunks = readChunks(flatPng)
   // Only ever called with the canvas' own PNG, so a failure here is a bug
   // rather than bad input -- unlike `decodeDraft`, which is handed user files.
-  if (chunks === null) throw new Error('aka: not a PNG')
+  if (chunks === null) throw new Error('akashi: not a PNG')
   // Right after IHDR: legal for an ancillary chunk, and a reader finds the
   // session without walking the image data.
   const at = chunks[1].start

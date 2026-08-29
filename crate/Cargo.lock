@@ -3,7 +3,7 @@
 version = 4
 
 [[package]]
-name = "aka-core"
+name = "akashi-core"
 version = "0.1.0"
 dependencies = [
  "wasm-bindgen",

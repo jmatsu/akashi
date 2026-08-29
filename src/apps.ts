@@ -1,7 +1,7 @@
 /**
- * The apps aka is made of, and how a URL names one.
+ * The apps Akashi is made of, and how a URL names one.
  *
- * Which app is showing is a query parameter rather than a path: aka is served
+ * Which app is showing is a query parameter rather than a path: Akashi is served
  * as static files from a sub-path on GitHub Pages, where a path this side of
  * the bundle would be a 404 before the service worker ever sees it. A bare URL
  * is the editor, which is what `start_url` in the manifest points at.

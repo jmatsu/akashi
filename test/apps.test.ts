@@ -11,33 +11,33 @@ import { CATALOGS, DEFAULT_LOCALE } from '../src/locales/index.ts'
 
 test('a bare URL is the default app', () => {
   assert.equal(appFromUrl('/'), DEFAULT_APP)
-  assert.equal(appFromUrl('/aka/'), DEFAULT_APP)
-  assert.equal(appFromUrl('/aka/?utm=whatever'), DEFAULT_APP)
+  assert.equal(appFromUrl('/akashi/'), DEFAULT_APP)
+  assert.equal(appFromUrl('/akashi/?utm=whatever'), DEFAULT_APP)
 })
 
 test('the parameter names the app', () => {
-  assert.equal(appFromUrl('/aka/?app=gif'), 'gif')
-  assert.equal(appFromUrl('/aka/?app=editor'), 'editor')
+  assert.equal(appFromUrl('/akashi/?app=gif'), 'gif')
+  assert.equal(appFromUrl('/akashi/?app=editor'), 'editor')
 })
 
 test('an app we do not have falls back rather than failing', () => {
-  assert.equal(appFromUrl('/aka/?app=nope'), DEFAULT_APP)
-  assert.equal(appFromUrl('/aka/?app='), DEFAULT_APP)
+  assert.equal(appFromUrl('/akashi/?app=nope'), DEFAULT_APP)
+  assert.equal(appFromUrl('/akashi/?app='), DEFAULT_APP)
   assert.equal(isAppId('nope'), false)
 })
 
 test('a link to an app keeps the path and the other parameters', () => {
-  assert.equal(urlForApp('gif', '/aka/?keep=1'), '/aka/?keep=1&app=gif')
-  assert.equal(urlForApp('gif', '/aka/sub/page'), '/aka/sub/page?app=gif')
+  assert.equal(urlForApp('gif', '/akashi/?keep=1'), '/akashi/?keep=1&app=gif')
+  assert.equal(urlForApp('gif', '/akashi/sub/page'), '/akashi/sub/page?app=gif')
 })
 
 test('the default app is the short URL, so an install lands where start_url points', () => {
-  assert.equal(urlForApp('editor', '/aka/?app=gif'), '/aka/')
-  assert.equal(urlForApp('editor', '/aka/?app=gif&keep=1'), '/aka/?keep=1')
+  assert.equal(urlForApp('editor', '/akashi/?app=gif'), '/akashi/')
+  assert.equal(urlForApp('editor', '/akashi/?app=gif&keep=1'), '/akashi/?keep=1')
 })
 
 test('switching back and forth is stable', () => {
-  const there = urlForApp('gif', '/aka/')
+  const there = urlForApp('gif', '/akashi/')
   assert.equal(appFromUrl(there), 'gif')
   assert.equal(appFromUrl(urlForApp('editor', there)), 'editor')
 })

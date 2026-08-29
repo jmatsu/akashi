@@ -1,4 +1,4 @@
-import { GifEncoder } from '../../wasm/aka_core.js'
+import { GifEncoder } from '../../wasm/akashi_core.js'
 import { pixels, requireWasm } from '../../wasm.ts'
 
 /**
@@ -35,12 +35,12 @@ export class GifWriter {
 
   /** Count a frame's colours towards the palette, before any is added. */
   sample(frame: ImageData): void {
-    if (!this.encoder.sample(pixels(frame))) throw new Error('aka: frame is not the size the GIF declared')
+    if (!this.encoder.sample(pixels(frame))) throw new Error('akashi: frame is not the size the GIF declared')
   }
 
   addFrame(frame: ImageData): void {
     if (!this.encoder.add_frame(pixels(frame))) {
-      throw new Error('aka: frame is not the size the GIF declared')
+      throw new Error('akashi: frame is not the size the GIF declared')
     }
   }
 

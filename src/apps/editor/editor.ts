@@ -468,7 +468,7 @@ export class Editor {
     if (this.editingId !== null) this.sceneDirty = true
     return new Promise((resolve, reject) => {
       this.scene.toBlob(
-        (blob) => (blob ? resolve(blob) : reject(new Error('aka: PNG encoding failed'))),
+        (blob) => (blob ? resolve(blob) : reject(new Error('akashi: PNG encoding failed'))),
         'image/png',
       )
     })
@@ -830,7 +830,7 @@ export class Editor {
 
   private setupTextarea(): void {
     const ta = this.textarea
-    ta.className = 'aka-text-input'
+    ta.className = 'akashi-text-input'
     ta.spellcheck = false
     ta.hidden = true
     ta.addEventListener('input', () => {

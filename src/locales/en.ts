@@ -9,7 +9,7 @@
  */
 export const en = {
   // --- document head ----------------------------------------------------
-  'app.title': 'aka — lightweight screenshot and screen recording tools',
+  'app.title': 'Akashi — lightweight screenshot and screen recording tools',
   'app.description':
     'Lightweight tools for annotating screenshots and turning screen recordings into GIFs. No install, works offline.',
   'app.loading': 'Loading…',
@@ -20,7 +20,7 @@ export const en = {
   'app.gif': 'GIF',
 
   // --- web manifest -----------------------------------------------------
-  'manifest.name': 'aka - lightweight screenshot and screen recording tools',
+  'manifest.name': 'Akashi - lightweight screenshot and screen recording tools',
   'manifest.description':
     'Annotate screenshots with text, shapes, arrows, markers, emoji stamps and mosaic/redaction, and turn a screen recording into an animated GIF. Works offline.',
 
@@ -43,7 +43,7 @@ export const en = {
   'action.delete': 'Delete',
   'name.label': 'Name for saved files',
   // Shows the shape of what an unnamed document is saved as.
-  'name.placeholder': 'aka-<date>',
+  'name.placeholder': 'akashi-<date>',
   'language.label': 'Language',
 
   // --- app regions ------------------------------------------------------

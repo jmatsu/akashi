@@ -10,7 +10,7 @@
 
 export function must<T extends Element>(selector: string, root: ParentNode = document): T {
   const node = root.querySelector<T>(selector)
-  if (!node) throw new Error(`aka: missing element ${selector}`)
+  if (!node) throw new Error(`akashi: missing element ${selector}`)
   return node
 }
 

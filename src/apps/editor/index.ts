@@ -8,7 +8,7 @@ import { Editor } from './editor'
 import { buildUI, TOOLS } from './ui'
 
 /**
- * The annotation editor: what aka was before it was two apps. Boot wires the
+ * The annotation editor: what Akashi was before it was two apps. Boot wires the
  * header, the file in and out, and the keyboard; the drawing itself is
  * `editor.ts`, and the toolbars are `ui.ts`.
  *
@@ -145,15 +145,15 @@ function sourceName(source: Blob): string | null {
 
 /** Save the document as a PNG file. Copy to the clipboard is the other half. */
 async function savePng(editor: Editor): Promise<void> {
-  download(await editor.toBlob(), fileName(editor.doc.name, 'aka', 'png'))
+  download(await editor.toBlob(), fileName(editor.doc.name, 'akashi', 'png'))
   toast(t('toast.saved'))
 }
 
 /**
- * Hand the whole editing session to another device as a `.aka` file (see
+ * Hand the whole editing session to another device as a `.akashi` file (see
  * `draft.ts`), through the share sheet where there is one and a download
  * otherwise. Chrome takes the fallback as a rule: it shares only files whose
- * extension is on a permitted list, and `.aka` is not on it.
+ * extension is on a permitted list, and `.akashi` is not on it.
  */
 async function shareDraft(editor: Editor): Promise<void> {
   const source = editor.sourceImage()
@@ -170,7 +170,7 @@ async function shareDraft(editor: Editor): Promise<void> {
   const parts = encodeDraft(new Uint8Array(flat), { doc: editor.doc, image })
   // The bytes really are a PNG, and saying so is what lets a receiving app
   // open the draft at all; only the name sets it apart.
-  const file = new File(parts, fileName(editor.doc.name, 'aka-draft', DRAFT_EXT), { type: 'image/png' })
+  const file = new File(parts, fileName(editor.doc.name, 'akashi-draft', DRAFT_EXT), { type: 'image/png' })
 
   if (navigator.canShare?.({ files: [file] })) {
     try {

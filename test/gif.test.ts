@@ -21,9 +21,9 @@ import {
  * the crossing. Requires `npm run build:wasm`.
  */
 
-const wasm = await import('../src/wasm/aka_core.js')
+const wasm = await import('../src/wasm/akashi_core.js')
 wasm.initSync({
-  module: readFileSync(fileURLToPath(new URL('../src/wasm/aka_core_bg.wasm', import.meta.url))),
+  module: readFileSync(fileURLToPath(new URL('../src/wasm/akashi_core_bg.wasm', import.meta.url))),
 })
 
 // --- the plan ----------------------------------------------------------

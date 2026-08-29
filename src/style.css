@@ -482,7 +482,7 @@ kbd {
 }
 
 /* The inline text editor. A real textarea is what makes IME input work. */
-.aka-text-input {
+.akashi-text-input {
   position: absolute;
   margin: 0;
   padding: 0;
@@ -495,7 +495,7 @@ kbd {
   caret-color: currentColor;
 }
 
-.aka-text-input[hidden] {
+.akashi-text-input[hidden] {
   display: none;
 }
 

@@ -1,8 +1,8 @@
 /**
  * Reading frames out of a video, using the only decoder that is already there:
  * the browser's own. A `<video>` is seeked to each moment the plan asks for and
- * drawn onto a canvas, which is what keeps aka free of a bundled codec -- and
- * what makes the formats it opens exactly the formats the browser plays.
+ * drawn onto a canvas, which is what keeps Akashi free of a bundled codec --
+ * and what makes the formats it opens exactly the formats the browser plays.
  *
  * Nothing is uploaded: the file is read through an object URL of its own bytes.
  */
@@ -115,12 +115,12 @@ function once(video: HTMLVideoElement, event: 'loadeddata' | 'seeked'): Promise<
     }
     const fail = (): void => {
       cleanup()
-      reject(new Error(`aka: the video could not be read (${event})`))
+      reject(new Error(`akashi: the video could not be read (${event})`))
     }
     const timer = window.setTimeout(() => {
       cleanup()
       if (event === 'seeked') resolve()
-      else reject(new Error('aka: the video did not load'))
+      else reject(new Error('akashi: the video did not load'))
     }, SEEK_TIMEOUT_MS)
 
     video.addEventListener(event, settle, { once: true })

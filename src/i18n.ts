@@ -14,7 +14,7 @@ import type { Locale, MessageKey } from './locales'
 export { DEFAULT_LOCALE, LOCALES, isLocale } from './locales'
 export type { Locale, MessageKey } from './locales'
 
-const STORAGE_KEY = 'aka.locale'
+const STORAGE_KEY = 'akashi.locale'
 
 let current: Locale = DEFAULT_LOCALE
 const listeners = new Set<() => void>()

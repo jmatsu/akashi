@@ -15,7 +15,7 @@ pub const MODE_BLACKOUT: u32 = 1;
 pub const MODE_TRANSPARENT: u32 = 2;
 
 /// Apply a region effect in place. An unknown `mode` leaves the buffer
-/// untouched, so a document from a newer aka degrades to "no effect".
+/// untouched, so a document from a newer Akashi degrades to "no effect".
 #[wasm_bindgen]
 pub fn apply_region(data: &mut [u8], width: u32, height: u32, mode: u32, strength: f32) {
     let w = width as usize;

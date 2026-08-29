@@ -1,4 +1,5 @@
-//! The wasm core for aka: the pixel work that repeats too often to leave in JS.
+//! The wasm core for Akashi: the pixel work that repeats too often to leave
+//! in JS.
 //!
 //! [`region`] backs the annotation editor's redactions, which reprocess the
 //! pixels under them on every frame of a drag; [`gif`] backs the video
