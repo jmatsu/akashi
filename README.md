@@ -174,7 +174,8 @@ npm run format:check  # the same check CI runs
 `dist/` is static files, so any host will do; for a sub-path deploy, build with
 `AKASHI_BASE=/akashi/ npm run build`. CI runs the same checks on every push and
 pull request. `main` is published to Cloudflare Pages, and a pull request from
-this repository gets a preview deployment commented onto it.
+this repository gets a preview deployment commented onto it. A daily sweep
+deletes the previews left behind once a pull request is closed.
 
 To add a language, drop a catalog into `src/locales/` and list it in `index.ts`.
 `en.ts` is the reference — every other catalog is typed as `Catalog`, so a
