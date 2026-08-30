@@ -1,0 +1,148 @@
+# Deletes the Cloudflare Pages preview deployments nothing points at any more.
+# deploy.yml creates them; this is the only thing that removes one.
+#
+# It runs on a schedule rather than off `pull_request: closed`, because the
+# event answers the wrong question. A closed pull request is one way a preview
+# goes stale, but a branch pushed without a pull request, a run that failed
+# after deploying, or a close that happened while this workflow was broken all
+# leave deployments behind that no event will ever come back for. A sweep that
+# reads the current state catches every one of those, and re-running it is
+# harmless -- the second pass finds nothing to do.
+#
+# What it keeps: the newest preview per branch with an open pull request from
+# this repository. Everything else preview is deleted -- older deployments
+# behind a live branch, and every deployment on a branch whose pull request is
+# gone. Production is never listed, let alone deleted.
+#
+# It needs the same CLOUDFLARE_ACCOUNT_ID and CLOUDFLARE_API_TOKEN as deploy.yml,
+# the token scoped to Cloudflare Pages:Edit.
+#
+# Actions are pinned to a commit, since a tag can be moved. The trailing comment
+# is the release that commit was, so a bump says what it is moving away from.
+name: Preview cleanup
+
+on:
+  schedule:
+    # Daily, off the hour -- a preview outliving its pull request by up to a day
+    # costs nothing, and there is no reason to hold the sweep to the minute.
+    - cron: '17 4 * * *'
+  workflow_dispatch:
+
+# Two sweeps at once would race to delete the same deployments and one would
+# lose; queueing is cheap when the job runs once a day.
+concurrency:
+  group: ${{ github.workflow }}
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+  # To read which pull requests are still open.
+  pull-requests: read
+
+jobs:
+  previews:
+    name: Delete stale previews
+    runs-on: ubuntu-slim
+    steps:
+      - uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
+        env:
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+        with:
+          script: |
+            const { CLOUDFLARE_ACCOUNT_ID, CLOUDFLARE_API_TOKEN } = process.env
+            const { owner, repo } = context.repo
+            const endpoint =
+              `https://api.cloudflare.com/client/v4/accounts/${CLOUDFLARE_ACCOUNT_ID}` +
+              '/pages/projects/akashi/deployments'
+
+            const cloudflare = async (url, method = 'GET') => {
+              const response = await fetch(url, {
+                method,
+                headers: { Authorization: `Bearer ${CLOUDFLARE_API_TOKEN}` },
+              })
+              const body = await response.json()
+              // The API answers 200 with `success: false` for some failures, so
+              // the body is the authority on whether the call worked.
+              if (!response.ok || !body.success) {
+                const errors = (body.errors || []).map((e) => `${e.code} ${e.message}`).join('; ')
+                throw new Error(`${method} ${url} -> ${response.status} ${errors || 'unknown error'}`)
+              }
+              return body.result
+            }
+
+            // Read what is live before touching anything: a failure here should
+            // stop the sweep, not let it mistake an unread pull request for a
+            // closed one and delete a preview somebody is still looking at.
+            const pulls = await github.paginate(github.rest.pulls.list, {
+              owner,
+              repo,
+              state: 'open',
+              per_page: 100,
+            })
+            // A fork's pull request never gets a preview -- deploy.yml skips it,
+            // since the secrets are not there to deploy with -- so its branch
+            // name must not keep a same-named branch of ours alive.
+            const live = new Set(
+              pulls.filter((p) => p.head.repo?.full_name === `${owner}/${repo}`).map((p) => p.head.ref),
+            )
+
+            // 25 is the API's maximum page size. A short page is the last one.
+            const PER_PAGE = 25
+            const deployments = []
+            for (let page = 1; ; page++) {
+              const batch = await cloudflare(`${endpoint}?env=preview&page=${page}&per_page=${PER_PAGE}`)
+              deployments.push(...batch)
+              if (batch.length < PER_PAGE) break
+            }
+
+            const newestPerBranch = new Map()
+            for (const deployment of deployments) {
+              // Belt and braces over `env=preview`: nothing below may run
+              // against a production deployment.
+              if (deployment.environment !== 'preview') continue
+              const branch = deployment.deployment_trigger?.metadata?.branch
+              if (!branch) continue
+              const newest = newestPerBranch.get(branch)
+              if (!newest || Date.parse(deployment.created_on) > Date.parse(newest.created_on)) {
+                newestPerBranch.set(branch, deployment)
+              }
+            }
+
+            const stale = []
+            for (const deployment of deployments) {
+              if (deployment.environment !== 'preview') continue
+              const branch = deployment.deployment_trigger?.metadata?.branch
+              // A preview no branch name reaches cannot be judged, so it stays.
+              if (!branch) {
+                core.warning(`kept ${deployment.id}: no branch recorded on the deployment`)
+                continue
+              }
+              if (!live.has(branch)) {
+                stale.push([deployment, `${branch} has no open pull request`])
+              } else if (newestPerBranch.get(branch).id !== deployment.id) {
+                stale.push([deployment, `superseded on ${branch}`])
+              }
+            }
+
+            const failures = []
+            for (const [deployment, reason] of stale) {
+              try {
+                // `force` covers the branch's own newest deployment, which the
+                // API refuses to delete while its alias points at it.
+                await cloudflare(`${endpoint}/${deployment.id}?force=true`, 'DELETE')
+                core.info(`deleted ${deployment.id}: ${reason}`)
+              } catch (error) {
+                // One deployment that will not delete -- a build still running,
+                // most likely -- should not hide the rest of the sweep.
+                failures.push(error.message)
+                core.error(`failed to delete ${deployment.id}: ${error.message}`)
+              }
+            }
+
+            core.info(
+              `${stale.length - failures.length} deleted, ` +
+                `${deployments.length - stale.length} kept, ${failures.length} failed`,
+            )
+            // A scheduled job nobody watches has to fail to be noticed.
+            if (failures.length) core.setFailed(`${failures.length} deployment(s) could not be deleted`)
