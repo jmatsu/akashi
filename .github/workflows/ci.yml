@@ -70,7 +70,7 @@ jobs:
         with:
           workspaces: crate
           shared-key: wasm
-      - uses: taiki-e/install-action@37f7c5781271959fb65b6b35224e28652ff2b63d # v2.87.0
+      - uses: taiki-e/install-action@7623a79cdfecb99d681017af368ca353d9f49bb5 # v2.87.19
         with:
           tool: wasm-pack
       - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
